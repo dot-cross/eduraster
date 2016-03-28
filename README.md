@@ -1,6 +1,6 @@
 # eduraster
 
-EduRaster is a personal project I've been doing by self-teaching, and is the result of my theoretical studies in mathematics, algorithms and computer graphics techniques. The main goal is to learn how works the graphics pipeline of libraries such as OpenGL and Direct3D, and for that I programmed from scratch a software rasterizer. Because the project is mainly focused on learning, is written entirely in C code without any kind of low-level optimizations.
+EduRaster is a personal project I've been doing by self-teaching, and is the result of my theoretical studies in mathematics, algorithms and computer graphics techniques. The main goal is to learn how works the graphics pipeline of libraries such as OpenGL and Direct3D, and for that I programmed from scratch a software rasterizer. Because the project is mainly focused on learning, it is written entirely in C code without any kind of low-level optimizations.
 
 ### Main features:
 
@@ -32,6 +32,10 @@ EduRaster is a personal project I've been doing by self-teaching, and is the res
 SDL 2.0.4 is needed to compile and run the samples. (https://www.libsdl.org/download-2.0.php).
 
 #### Single Triangle
+
+Drawing of a single triangle with linear interpolation of vertex colors. Used begin/end commands.
+
+![ScreenShot](samples/screenshots/triangle.jpg)
 
 #### Surface plot
 
