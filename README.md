@@ -39,6 +39,11 @@ Drawing of a single triangle with linear interpolation of vertex colors. Used be
 
 #### Surface plot
 
+Parsing, calculation and drawing of parametric surfaces entered by keyboard. Rendering of primitives from vertex arrays and indices.
+Phong shading with a main directional light, with diffuse and specular components.
+
+![ScreenShot](samples/screenshots/surface_plot.jpg)
+
 #### Tubeplot
 
 #### Textured Cube
