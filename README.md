@@ -46,6 +46,11 @@ Phong shading with a main directional light, with diffuse and specular component
 
 #### Tubeplot
 
+Constructs a tube along a curve entered by keyboard. Rendering of primitives from vertex arrays and indices.
+Phong shading with a main directional light, with diffuse and specular components.
+
+![ScreenShot](samples/screenshots/tubeplot.jpg)
+
 #### Textured Cube
 
 #### Environment Mapping
