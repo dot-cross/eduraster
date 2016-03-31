@@ -53,4 +53,9 @@ Phong shading with a main directional light, with diffuse and specular component
 
 #### Textured Cube
 
+Texture mapped cube. Perspective correct interpolation of texture coordinates. 
+Calculation of perspective correct derivatives for trilinear filtering. Backface culling.
+
+![ScreenShot](samples/screenshots/texcube.jpg)
+
 #### Environment Mapping
