@@ -59,3 +59,9 @@ Calculation of perspective correct derivatives for trilinear filtering. Backface
 ![ScreenShot](samples/screenshots/texcube.jpg)
 
 #### Environment Mapping
+
+Environment mapped torus and skybox. Sampling of cubemap texture with normal vector in object space.
+
+![ScreenShot](samples/screenshots/envmap.jpg)
+
+#### Plane deformations
