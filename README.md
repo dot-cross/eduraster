@@ -65,3 +65,9 @@ Environment mapped torus and skybox. Sampling of cubemap texture with normal vec
 ![ScreenShot](samples/screenshots/envmap.jpg)
 
 #### Plane deformations
+
+Drawing of 2 triangles that cover the entire screen and a fragment shader to generate a tunnel effect with varying color brightness.
+Calculation of analytics derivatives for trilinear filtering.
+
+![ScreenShot](samples/screenshots/pdef.jpg)
+
