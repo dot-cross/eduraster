@@ -1,6 +1,6 @@
 # eduraster
 
-EduRaster is a personal project I've been doing by self-teaching, and is the result of my theoretical studies in mathematics, algorithms and computer graphics techniques. The main goal is to learn how works the graphics pipeline of libraries such as OpenGL and Direct3D, and for that I programmed from scratch a software rasterizer. Because the project is mainly focused on learning, it is written entirely in C code without any kind of low-level optimizations.
+Eduraster is a personal project that I did for self-teaching purposes, and was the result of my study in computer graphics. My main objective was to understand how it works the graphics pipeline of rasterization APIs like OpenGL and Direct3D, so I wrote a software rasterizer from scratch. Because the project was mainly focused on learning, it was written entirely in C code without any kind of low-level optimizations.
 
 ### Main features:
 
