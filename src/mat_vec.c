@@ -26,6 +26,11 @@ void reflection_vec2(vec2 incident_vec, vec2 normal_vec, vec2 reflection_vec){
     reflection_vec[1] = incident_vec[1] - 2.0f * normal_dot_incident * normal_vec[1];
 }
 
+void perp_vec2(vec2 vec, vec2 perp){
+    perp[0] = -vec[1];
+    perp[1] = vec[0];
+}
+
 /*  VECTOR 3  */
 
 float length_vec3(vec3 vec){
@@ -60,7 +65,7 @@ void reflection_vec3(vec3 incident_vec, vec3 normal_vec, vec3 reflection_vec){
     reflection_vec[2] = incident_vec[2] - 2.0f * normal_dot_incident * normal_vec[2];
 }
 
-void normal_vec3(vec3 vec, vec3 normal){
+void perp_vec3(vec3 vec, vec3 perp){
     int mi1 = 1, mi2 = 2, ma = 0;
     if(fabs(vec[1]) > fabs(vec[ma])){
         mi1 = 0;
@@ -72,10 +77,9 @@ void normal_vec3(vec3 vec, vec3 normal){
         mi2 = 1;
         ma = 2;
     }
-    normal[mi1] = 1.0f;
-    normal[mi2] = 1.0f;
-    normal[ma] = (-vec[mi1]-vec[mi2]) / vec[ma];
-    normalize_vec3(normal);
+    perp[mi1] = 1.0f;
+    perp[mi2] = 1.0f;
+    perp[ma] = (-vec[mi1]-vec[mi2]) / vec[ma];
 }
 
 /* VECTOR 4 */

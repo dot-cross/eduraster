@@ -51,6 +51,8 @@ void normalize_vec2(vec2 vec);
 
 void reflection_vec2(vec2 incident_vec, vec2 normal_vec, vec2 reflection_vec);
 
+void perp_vec2(vec2 vec, vec2 perp);
+
 /*  VECTOR 3  */
 
 #define dot_vec3(vec0, vec1 ) ( (vec0)[0] * (vec1)[0] + (vec0)[1] * (vec1)[1] + (vec0)[2] * (vec1)[2] )
@@ -65,7 +67,7 @@ void normalize_vec3(vec3 vec);
 
 void reflection_vec3(vec3 incident_vec, vec3 normal_vec, vec3 reflection_vec);
 
-void normal_vec3(vec3 vec, vec3 normal);
+void perp_vec3(vec3 vec, vec3 perp);
 
 /*  VECTOR 4  */
 

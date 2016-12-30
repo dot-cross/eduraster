@@ -64,7 +64,7 @@ static void write_color(int y, int x, float red, float green, float blue, float 
     r = uiround(255.0f * red);
     g = uiround(255.0f * green);
     b = uiround(255.0f * blue);
-    color_buffer[inv_y * window_width + x] = 255 < 24 | r << 16 | g << 8 | b;
+    color_buffer[inv_y * window_width + x] = 255 << 24 | r << 16 | g << 8 | b;
 }
 
 /*
@@ -90,7 +90,7 @@ static void draw(){
 */
 static void display (void) {
     draw();
-    SDL_UpdateTexture(screen_texture, NULL, color_buffer, window_width * sizeof(int));
+    SDL_UpdateTexture(screen_texture, NULL, color_buffer, window_width * sizeof(unsigned int));
     SDL_RenderCopy(renderer, screen_texture, NULL, NULL);
     SDL_RenderPresent(renderer);
 }

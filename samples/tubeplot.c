@@ -556,7 +556,8 @@ static void calculate_rmf(){
     /* Second pass: Calculate an initial frame, and rotate it along the curve */
     mat3 rotate_matrix;
     cframe = &(curve_frames[0]);
-    normal_vec3(cframe->tangent, cframe->normal);
+    perp_vec3(cframe->tangent, cframe->normal);
+    normalize_vec3(cframe->normal);
     cross_product(cframe->normal, cframe->tangent, cframe->binormal);
     normalize_vec3(cframe->binormal);
     pframe = cframe;
