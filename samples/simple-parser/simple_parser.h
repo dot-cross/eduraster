@@ -15,7 +15,7 @@ struct expression;
  * Structure for variables.
  */
 struct var {
-    char *name;
+    const char *name;
     float value;
 };
 
@@ -27,7 +27,7 @@ struct var {
  * var_size: Number of variables. Pass 0 if the expression does not need variables.
  * error: If an error occurred, an error message will be written. Pass NULL if you don't need an error message.
  */
-struct expression* parse(char *string, struct var *vars, int var_size, char **error);
+struct expression* parse(const char *string, struct var *vars, int var_size, char **error);
 
 /*
  * Evaluates an expression. Returns 0.0 if exp is NULL.
@@ -35,6 +35,13 @@ struct expression* parse(char *string, struct var *vars, int var_size, char **er
  * exp: Pointer to expression structure.
  */
 float eval(struct expression *exp);
+
+/*
+ * Returns the string for an expression.
+ * Parameters:
+ * exp: Pointer to expression structure
+ */
+const char* get_string(struct expression *exp);
 
 /*
  * Frees an expression structure.

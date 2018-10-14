@@ -35,7 +35,7 @@ struct expression {
 };
 
 struct constant{
-    char *name;
+    const char *name;
     int length;
     float value;
 };
@@ -178,7 +178,7 @@ static float func_mod(struct node **argv){
 }
 
 struct function{
-    char *name;
+    const char *name;
     int length;
     int argc;
     float (*func)(struct node**);
@@ -305,7 +305,7 @@ static int check_parenthesis(const char *input){
     return pcount;
 }
 
-static char* clear_parenthesis(char *input, int *length){
+static const char* clear_parenthesis(const char *input, int *length){
     int p = 0;
     while(input[p] == '(' && input[*length-1-p] == ')'){
         p++;
@@ -327,7 +327,7 @@ static char* clear_parenthesis(char *input, int *length){
     return input+p;
 }
 
-static int is_number(char *string, int length){
+static int is_number(const char *string, int length){
     char c = string[0];
     int dot_count = 0;
     if(!isdigit(c)){
@@ -351,7 +351,7 @@ static int is_number(char *string, int length){
     return 1;
 }
 
-static float parse_number(char *string){
+static float parse_number(const char *string){
     float val, power;
     int i = 0, sign;
     sign = (string[i] == '-') ? -1 : 1;
@@ -368,7 +368,7 @@ static float parse_number(char *string){
     return sign * val / power;
 }
 
-static const struct constant* is_constant(char *string, int length){
+static const struct constant* is_constant(const char *string, int length){
     const struct constant *c = NULL;
     int i;
     for(i = 0; i < const_size; i++){
@@ -380,7 +380,7 @@ static const struct constant* is_constant(char *string, int length){
     return c;
 }
 
-static int is_valid_varname(char *name, int length){
+static int is_valid_varname(const char *name, int length){
     char c = name[0];
     if(!isalpha(c) && c != '_'){
         return 0;
@@ -409,7 +409,8 @@ static int check_vars(struct var *vars, int var_size, char **error){
             sp_err(error, "Invalid variable name: String is empty");
             return 0;
         }
-        char *name = v->name, c = v->name[0];
+        const char *name = v->name;
+        char c = v->name[0];
         if(!isalpha(c) && c != '_'){
             sp_err(error, "Invalid variable name: First character is not a letter or an underscore");
             return 0;
@@ -425,7 +426,7 @@ static int check_vars(struct var *vars, int var_size, char **error){
     return 1;
 }
 
-static int strcmp_case(char *str1, char *str2, int length) {
+static int strcmp_case(const char *str1, const char *str2, int length) {
     int i;
     for (i = 0; i < length; i++){
         char c1 = isupper(str1[i]) ? str1[i]: toupper(str1[i]);
@@ -437,7 +438,7 @@ static int strcmp_case(char *str1, char *str2, int length) {
     return 0;
 }
 
-static struct var* is_variable(char *string, int length, struct var *vars, int var_size){
+static struct var* is_variable(const char *string, int length, struct var *vars, int var_size){
     if(vars == NULL || var_size == 0){
         return NULL;
     }
@@ -453,7 +454,7 @@ static struct var* is_variable(char *string, int length, struct var *vars, int v
     return v;
 }
 
-static int is_binary(char *string, int length, int *bindex){
+static int is_binary(const char *string, int length, int *bindex){
     int op = BINOP_INV, op_index = -1;
     char c, p = '\0';
     int i, pcount = 0;
@@ -505,7 +506,7 @@ static int is_binary(char *string, int length, int *bindex){
     return op;
 }
 
-static const struct function* is_function(char *string, int length){
+static const struct function* is_function(const char *string, int length){
     const struct function *func = NULL;
     int i;
     for(i = 0; i < func_size; i++){
@@ -519,7 +520,7 @@ static const struct function* is_function(char *string, int length){
     return func;
 }
 
-static struct node* parse_rec(char *string, int length, struct var *vars, int var_size, char **error){
+static struct node* parse_rec(const char *string, int length, struct var *vars, int var_size, char **error){
     string = clear_parenthesis(string, &length);
     if(length == 0){
         sp_err(error, "Invalid expression");
@@ -575,8 +576,8 @@ static struct node* parse_rec(char *string, int length, struct var *vars, int va
             sp_err(error, "Empty operand on binary operation");
             return NULL;
         }
-        char *str_op1 = string;
-        char *str_op2 = string+(bindex+1);
+        const char *str_op1 = string;
+        const char *str_op2 = string+(bindex+1);
         struct node *op1 = parse_rec(str_op1, length_op1, vars, var_size, error);
         if(op1 == NULL){
             return NULL;
@@ -610,7 +611,7 @@ static struct node* parse_rec(char *string, int length, struct var *vars, int va
     }
     const struct function *func = is_function(string, length);
     if(func != NULL){
-        char *str_arg = string + (func->length+1);
+        const char *str_arg = string + (func->length+1);
         int length_arg = length - (func->length+2), argc = 0;
         if(length_arg > 0 ){
             if(str_arg[0] == ',' || str_arg[length_arg-1] == ','){
@@ -728,7 +729,7 @@ static struct node* parse_rec(char *string, int length, struct var *vars, int va
     return NULL;
 }
 
-struct expression* parse(char *string, struct var *vars, int var_size, char **error){
+struct expression* parse(const char *string, struct var *vars, int var_size, char **error){
     if(string == NULL){
         sp_err(error, "String is null");
         return NULL;
@@ -806,4 +807,12 @@ float eval(struct expression *exp){
         value = eval_rec(exp->root);
     }
     return value;
+}
+
+const char* get_string(struct expression *exp){
+    const char *str = NULL;
+    if(exp != NULL){
+        str = exp->string;
+    }
+    return str;
 }
