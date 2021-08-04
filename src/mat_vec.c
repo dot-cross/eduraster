@@ -3,7 +3,7 @@
 /*  VECTOR 2  */
 
 float length_vec2(vec2 vec){
-    return sqrt(vec[0]*vec[0]+vec[1]*vec[1]);
+    return sqrt(vec[0]*vec[0] + vec[1]*vec[1]);
 }
 
 float angle_vec2(vec2 vec0, vec2 vec1){
@@ -108,6 +108,21 @@ void assignT_mat2(mat2 dst, mat2 src){
     dst[1][0] = src[0][1];  dst[1][1] = src[1][1];
 }
 
+void add_mat2(mat2 mat0, mat2 mat1, mat2 out){
+    out[0][0] = mat0[0][0] + mat1[0][0]; out[0][1] = mat0[0][1] + mat1[0][1];
+    out[1][0] = mat0[1][0] + mat1[1][0]; out[1][1] = mat0[1][1] + mat1[1][1];
+}
+
+void sub_mat2(mat2 mat0, mat2 mat1, mat2 out){
+    out[0][0] = mat0[0][0] - mat1[0][0]; out[0][1] = mat0[0][1] - mat1[0][1];
+    out[1][0] = mat0[1][0] - mat1[1][0]; out[1][1] = mat0[1][1] - mat1[1][1];
+}
+
+void mult_k_mat2(float k, mat2 mat, mat2 out){
+    out[0][0] = k * mat[0][0]; out[0][1] = k * mat[0][1];
+    out[1][0] = k * mat[1][0]; out[1][1] = k * mat[1][1];
+}
+
 void identity_mat2(mat2 mat){
     mat[0][0] = 1.0f;  mat[0][1] = 0.0f;
     mat[1][0] = 0.0f;  mat[1][1] = 1.0f;
@@ -117,8 +132,7 @@ void mult_mat2_vec2(mat2 mat, vec2 vec, vec2 out){
     vec2 aux;
     aux[0] = mat[0][0] * vec[0] + mat[0][1] * vec[1];
     aux[1] = mat[1][0] * vec[0] + mat[1][1] * vec[1];
-    out[0] = aux[0];
-    out[1] = aux[1];
+    assign_vec2(out, aux);
 }
 
 void multd_mat2_vec2(mat2 mat, vec2 vec, vec2 out){
@@ -195,6 +209,24 @@ void assignT_mat3(mat3 dst, mat3 src){
     dst[2][0] = src[0][2];  dst[2][1] = src[1][2];  dst[2][2] = src[2][2];
 }
 
+void add_mat3(mat3 mat0, mat3 mat1, mat3 out){
+    out[0][0] = mat0[0][0] + mat1[0][0]; out[0][1] = mat0[0][1] + mat1[0][1]; out[0][2] = mat0[0][2] + mat1[0][2];
+    out[1][0] = mat0[1][0] + mat1[1][0]; out[1][1] = mat0[1][1] + mat1[1][1]; out[1][2] = mat0[1][2] + mat1[1][2];
+    out[2][0] = mat0[2][0] + mat1[2][0]; out[2][1] = mat0[2][1] + mat1[2][1]; out[2][2] = mat0[2][2] + mat1[2][2];
+}
+
+void sub_mat3(mat3 mat0, mat3 mat1, mat3 out){
+    out[0][0] = mat0[0][0] - mat1[0][0]; out[0][1] = mat0[0][1] - mat1[0][1]; out[0][2] = mat0[0][2] - mat1[0][2];
+    out[1][0] = mat0[1][0] - mat1[1][0]; out[1][1] = mat0[1][1] - mat1[1][1]; out[1][2] = mat0[1][2] - mat1[1][2];
+    out[2][0] = mat0[2][0] - mat1[2][0]; out[2][1] = mat0[2][1] - mat1[2][1]; out[2][2] = mat0[2][2] - mat1[2][2];
+}
+
+void mult_k_mat3(float k, mat3 mat, mat3 out){
+    out[0][0] = k * mat[0][0]; out[0][1] = k * mat[0][1]; out[0][2] = k * mat[0][2];
+    out[1][0] = k * mat[1][0]; out[1][1] = k * mat[1][1]; out[1][2] = k * mat[1][2];
+    out[2][0] = k * mat[2][0]; out[2][1] = k * mat[2][1]; out[2][2] = k * mat[2][2];
+}
+
 void identity_mat3(mat3 mat){
     mat[0][0] = 1.0f;  mat[0][1] = 0.0f;  mat[0][2] = 0.0f;
     mat[1][0] = 0.0f;  mat[1][1] = 1.0f;  mat[1][2] = 0.0f;
@@ -206,9 +238,7 @@ void mult_mat3_vec3(mat3 mat, vec3 vec, vec3 out){
     aux[0] = mat[0][0] * vec[0] + mat[0][1] * vec[1] + mat[0][2] * vec[2];
     aux[1] = mat[1][0] * vec[0] + mat[1][1] * vec[1] + mat[1][2] * vec[2];
     aux[2] = mat[2][0] * vec[0] + mat[2][1] * vec[1] + mat[2][2] * vec[2];
-    out[0] = aux[0];
-    out[1] = aux[1];
-    out[2] = aux[2];
+    assign_vec3(out, aux);
 }
 
 void multd_mat3_vec3(mat3 mat, vec3 vec, vec3 out){
@@ -218,7 +248,7 @@ void multd_mat3_vec3(mat3 mat, vec3 vec, vec3 out){
 }
 
 void mult_mat3_mat3(mat3 mat0, mat3 mat1, mat3 out){
-    mat3 aux;
+    mat3 aux;   
     aux[0][0] = mat0[0][0] * mat1[0][0] +
                 mat0[0][1] * mat1[1][0] +
                 mat0[0][2] * mat1[2][0];
@@ -389,6 +419,27 @@ void assignT_mat4(mat4 dst, mat4 src){
     dst[3][0] = src[0][3];  dst[3][1] = src[1][3];  dst[3][2] = src[2][3];  dst[3][3] = src[3][3];
 }
 
+void add_mat4(mat4 mat0, mat4 mat1, mat4 out){
+    out[0][0] = mat0[0][0] + mat1[0][0]; out[0][1] = mat0[0][1] + mat1[0][1]; out[0][2] = mat0[0][2] + mat1[0][2]; out[0][3] = mat0[0][3] + mat1[0][3];
+    out[1][0] = mat0[1][0] + mat1[1][0]; out[1][1] = mat0[1][1] + mat1[1][1]; out[1][2] = mat0[1][2] + mat1[1][2]; out[1][3] = mat0[1][3] + mat1[1][3];
+    out[2][0] = mat0[2][0] + mat1[2][0]; out[2][1] = mat0[2][1] + mat1[2][1]; out[2][2] = mat0[2][2] + mat1[2][2]; out[2][3] = mat0[2][3] + mat1[2][3];
+    out[3][0] = mat0[3][0] + mat1[3][0]; out[3][1] = mat0[3][1] + mat1[3][1]; out[3][2] = mat0[3][2] + mat1[3][2]; out[3][3] = mat0[3][3] + mat1[3][3];
+}
+
+void sub_mat4(mat4 mat0, mat4 mat1, mat4 out){
+    out[0][0] = mat0[0][0] - mat1[0][0]; out[0][1] = mat0[0][1] - mat1[0][1]; out[0][2] = mat0[0][2] - mat1[0][2]; out[0][3] = mat0[0][3] - mat1[0][3];
+    out[1][0] = mat0[1][0] - mat1[1][0]; out[1][1] = mat0[1][1] - mat1[1][1]; out[1][2] = mat0[1][2] - mat1[1][2]; out[1][3] = mat0[1][3] - mat1[1][3];
+    out[2][0] = mat0[2][0] - mat1[2][0]; out[2][1] = mat0[2][1] - mat1[2][1]; out[2][2] = mat0[2][2] - mat1[2][2]; out[2][3] = mat0[2][3] - mat1[2][3];
+    out[3][0] = mat0[3][0] - mat1[3][0]; out[3][1] = mat0[3][1] - mat1[3][1]; out[3][2] = mat0[3][2] - mat1[3][2]; out[3][3] = mat0[3][3] - mat1[3][3];
+}
+
+void mult_k_mat4(float k, mat4 mat, mat4 out){
+    out[0][0] = k * mat[0][0]; out[0][1] = k * mat[0][1]; out[0][2] = k * mat[0][2]; out[0][3] = k * mat[0][3];
+    out[1][0] = k * mat[1][0]; out[1][1] = k * mat[1][1]; out[1][2] = k * mat[1][2]; out[1][3] = k * mat[1][3];
+    out[2][0] = k * mat[2][0]; out[2][1] = k * mat[2][1]; out[2][2] = k * mat[2][2]; out[2][3] = k * mat[2][3];
+    out[3][0] = k * mat[3][0]; out[3][1] = k * mat[3][1]; out[3][2] = k * mat[3][2]; out[3][3] = k * mat[3][3];
+}
+
 void identity_mat4(mat4 mat){
     mat[0][0] = 1.0f;  mat[0][1] = 0.0f;  mat[0][2] = 0.0f;  mat[0][3] = 0.0f;
     mat[1][0] = 0.0f;  mat[1][1] = 1.0f;  mat[1][2] = 0.0f;  mat[1][3] = 0.0f;
@@ -402,10 +453,7 @@ void mult_mat4_vec4(mat4 mat, vec4 vec, vec4 out){
     aux[1] = mat[1][0] * vec[0] + mat[1][1] * vec[1] + mat[1][2] * vec[2] + mat[1][3] * vec[3];
     aux[2] = mat[2][0] * vec[0] + mat[2][1] * vec[1] + mat[2][2] * vec[2] + mat[2][3] * vec[3];
     aux[3] = mat[3][0] * vec[0] + mat[3][1] * vec[1] + mat[3][2] * vec[2] + mat[3][3] * vec[3];
-    out[0] = aux[0];
-    out[1] = aux[1];
-    out[2] = aux[2];
-    out[3] = aux[3];
+    assign_vec4(out, aux);
 }
 
 void multd_mat4_vec4(mat4 mat, vec4 vec, vec4 out){
@@ -764,9 +812,7 @@ void lookat_mat4(mat4 mat, vec3 eye_pos, vec3 at_pos, vec3 up_vector){
 
     vec3 camera_backward, camera_up, camera_right;
     /* Camera Backward Vector */
-    camera_backward[0] = eye_pos[0] - at_pos[0];
-    camera_backward[1] = eye_pos[1] - at_pos[1];
-    camera_backward[2] = eye_pos[2] - at_pos[2];
+    sub_vec3(eye_pos, at_pos, camera_backward);
     normalize_vec3(camera_backward);
     /* Camera Right vector */
     cross_product(up_vector, camera_backward, camera_right);

@@ -9,127 +9,162 @@
 
 #include "mat_vec.h"
 
+/* Boolean values */
+typedef enum {
+    ER_FALSE = 0,
+    ER_TRUE = 1
+} er_Bool;
+
 /* Matrix Modes */
-#define ER_MODELVIEW 0x0
-#define ER_PROJECTION 0x1
+typedef enum {
+    ER_MODELVIEW = 0x0,
+    ER_PROJECTION = 0x1
+} er_MatrixModeEnum;
 
 /* Error handling */
-#define ER_NO_ERROR 0x0
-#define ER_OUT_OF_RANGE 0x1
-#define ER_INVALID_ENUM 0x2
-#define ER_OUT_OF_MEMORY 0x3
-#define ER_INVALID_OPERATION 0x4
-#define ER_STACK_OVERFLOW 0x5
-#define ER_STACK_UNDERFLOW 0x6
-#define ER_NULL_POINTER 0x7
-#define ER_NO_POWER_OF_TWO 0x8
-#define ER_TEXTURE_MIPMAP_NO_COMPLETE 0x9
-#define ER_NO_PROGRAM_LOADED 0xA
-
-/* Boolean values */
-#define ER_FALSE 0x0
-#define ER_TRUE 0x1
+typedef enum {
+    ER_NO_ERROR = 0x0,
+    ER_INVALID_ARGUMENT = 0x1,
+    ER_NO_VERTEX_ARRAY_SET = 0x2,
+    ER_OUT_OF_MEMORY = 0x3,
+    ER_INVALID_OPERATION = 0x4,
+    ER_STACK_OVERFLOW = 0x5,
+    ER_STACK_UNDERFLOW = 0x6,
+    ER_NULL_POINTER = 0x7,
+    ER_NO_POWER_OF_TWO = 0x8,
+    ER_NO_PROGRAM_SET = 0x9
+} er_StatusEnum;
 
 /* Primitives */
-#define ER_LINES 0x0
-#define ER_LINE_STRIP 0x1
-#define ER_LINE_LOOP 0x2
-#define ER_TRIANGLES 0x3
-#define ER_TRIANGLE_STRIP 0x4
-#define ER_TRIANGLE_FAN 0x5
-#define ER_POINTS 0x6
+typedef enum {
+    ER_LINES = 0x0,
+    ER_LINE_STRIP = 0x1,
+    ER_LINE_LOOP = 0x2,
+    ER_TRIANGLES = 0x3,
+    ER_TRIANGLE_STRIP = 0x4,
+    ER_TRIANGLE_FAN = 0x5,
+    ER_POINTS = 0x6
+} er_PrimitiveEnum;
 
-/* Polygon orientation */
-#define ER_FRONT 0x7
-#define ER_BACK 0x8
-#define ER_FRONT_AND_BACK 0x9
-#define ER_CULL_FACE 0xA
-#define ER_COUNTER_CLOCK_WISE 0xB
-#define ER_CLOCK_WISE 0xC
+/* Polygon Face */
+typedef enum {
+    ER_FRONT = 0x7,
+    ER_BACK = 0x8,
+    ER_FRONT_AND_BACK = 0x9
+} er_PolygonFaceEnum;
+
+/* Polygon Orientation */
+typedef enum {
+    ER_COUNTER_CLOCK_WISE = 0xA,
+    ER_CLOCK_WISE = 0xB
+} er_PolygonOrientationEnum;
 
 /* Polygon mode */
-#define ER_FILL 0xD
-#define ER_LINE 0xE
-#define ER_POINT 0xF
+typedef enum {
+    ER_FILL = 0xC,
+    ER_LINE = 0xD,
+    ER_POINT = 0xE
+} er_PolygonModeEnum;
 
 /* Texture targets */
-#define ER_TEXTURE_1D 0x10
-#define ER_TEXTURE_2D 0x11
-#define ER_TEXTURE_CUBE_MAP 0x12
-#define ER_TEXTURE_CUBE_MAP_POSITIVE_X 0x13
-#define ER_TEXTURE_CUBE_MAP_NEGATIVE_X 0x14
-#define ER_TEXTURE_CUBE_MAP_POSITIVE_Y 0x15
-#define ER_TEXTURE_CUBE_MAP_NEGATIVE_Y 0x16
-#define ER_TEXTURE_CUBE_MAP_POSITIVE_Z 0x17
-#define ER_TEXTURE_CUBE_MAP_NEGATIVE_Z 0x18
+typedef enum {
+    ER_TEXTURE_1D = 0xF,
+    ER_TEXTURE_2D = 0x10,
+    ER_TEXTURE_CUBE_MAP = 0x11,
+    ER_TEXTURE_CUBE_MAP_POSITIVE_X = 0x12,
+    ER_TEXTURE_CUBE_MAP_NEGATIVE_X = 0x13,
+    ER_TEXTURE_CUBE_MAP_POSITIVE_Y = 0x14,
+    ER_TEXTURE_CUBE_MAP_NEGATIVE_Y = 0x15,
+    ER_TEXTURE_CUBE_MAP_POSITIVE_Z = 0x16,
+    ER_TEXTURE_CUBE_MAP_NEGATIVE_Z = 0x17
+} er_TextureTargetEnum;
 
 /* Texture filtering */
-#define ER_NEAREST 0x19
-#define ER_LINEAR 0x1A
-#define ER_NEAREST_MIPMAP_NEAREST 0x1B
-#define ER_NEAREST_MIPMAP_LINEAR 0x1C
-#define ER_LINEAR_MIPMAP_NEAREST 0x1D
-#define ER_LINEAR_MIPMAP_LINEAR 0x1E
+typedef enum {
+    ER_NEAREST = 0x18,
+    ER_LINEAR = 0x19,
+    ER_NEAREST_MIPMAP_NEAREST = 0x1A,
+    ER_NEAREST_MIPMAP_LINEAR = 0x1B,
+    ER_LINEAR_MIPMAP_NEAREST = 0x1C,
+    ER_LINEAR_MIPMAP_LINEAR = 0x1D
+} er_TextureFilterEnum;
 
 /* Texture coordinates */
-#define ER_TEXTURE_COORD_S 0x1F
-#define ER_TEXTURE_COORD_T 0x20
-#define ER_TEXTURE_COORD_R 0x21
-#define ER_TEXTURE_COORD_Q 0x22
+typedef enum {
+    ER_TEXTURE_COORD_S = 0x1E,
+    ER_TEXTURE_COORD_T = 0x1F,
+    ER_TEXTURE_COORD_R = 0x20,
+    ER_TEXTURE_COORD_Q = 0x21
+} er_TextureCoordEnum;
 
 /* Wrapping modes */
-#define ER_REPEAT 0x23
-#define ER_MIRROR_REPEAT 0x24
-#define ER_CLAMP_TO_EDGE 0x25
+typedef enum {
+    ER_REPEAT = 0x22,
+    ER_MIRROR_REPEAT = 0x23,
+    ER_CLAMP_TO_EDGE = 0x24
+} er_TextureWrapModeEnum;
 
 /* Texture parameters */
-#define ER_MAGNIFICATION_FILTER 0x26
-#define ER_MINIFICATION_FILTER 0x27
-#define ER_LOD_BASE_LEVEL 0x28
-#define ER_LOD_MAX_LEVEL 0x29
-#define ER_LOD_MIN 0x2A
-#define ER_LOD_MAX 0x2B
-#define ER_WRAP_S 0x2C
-#define ER_WRAP_T 0x2D
-#define ER_WRAP_R 0x2E
+typedef enum {
+    ER_MAGNIFICATION_FILTER = 0x25,
+    ER_MINIFICATION_FILTER = 0x26,
+    ER_LOD_BASE_LEVEL = 0x27,
+    ER_LOD_MAX_LEVEL = 0x28,
+    ER_LOD_MIN = 0x29,
+    ER_LOD_MAX = 0x2A,
+    ER_WRAP_S = 0x2B,
+    ER_WRAP_T = 0x2C,
+    ER_WRAP_R = 0x2D
+} er_TextureParamEnum;
 
 /* Point sprites */
-#define ER_POINT_SPRITES 0x2F
-#define ER_POINT_SPRITE_COORD_ORIGIN 0x30
-#define ER_POINT_SPRITE_LOWER_LEFT 0x31
-#define ER_POINT_SPRITE_UPPER_LEFT 0x32
+typedef enum {
+    ER_POINT_SPRITE_COORD_ORIGIN = 0x2E,
+    ER_POINT_SPRITE_LOWER_LEFT = 0x2F,
+    ER_POINT_SPRITE_UPPER_LEFT = 0x30
+} er_PointSpriteEnum;
 
 /* Vertex array */
-#define ER_VERTEX_ARRAY 0x33
-#define ER_NORMAL_ARRAY 0x34
-#define ER_COLOR_ARRAY 0x35
-#define ER_FOG_COORD_ARRAY 0x36
-#define ER_TEX_COORD_ARRAY 0x37
+typedef enum {
+    ER_VERTEX_ARRAY = 0x31,
+    ER_NORMAL_ARRAY = 0x32,
+    ER_COLOR_ARRAY = 0x33,
+    ER_FOG_COORD_ARRAY = 0x34,
+    ER_TEX_COORD_ARRAY = 0x35
+} er_VertexArrayEnum;
 
 /* Texture formats */
-#define ER_R32F 0x38
-#define ER_RG32F 0x39
-#define ER_RGB32F 0x3A
-#define ER_RGBA32F 0x3B
-#define ER_DEPTH32F 0x3C
+typedef enum {
+    ER_R32F = 0x36,
+    ER_RG32F = 0x37,
+    ER_RGB32F = 0x38,
+    ER_RGBA32F = 0x39,
+    ER_DEPTH32F =0x3A
+} er_TextureFormatEnum;
+
+/* Settings */
+typedef enum {
+    ER_CULL_FACE = 0x3B,
+    ER_POINT_SPRITES = 0x3C
+} er_EnableSettingEnum;
 
 #define ATTRIBUTES_SIZE 16
 
-struct vertex_input {
+typedef struct er_VertexInput {
     vec4 position;
     vec3 normal;
     vec4 color;
     float fog_coord;
     vec4 tex_coord;
-};
+} er_VertexInput;
 
-struct vertex_output{
+typedef struct er_VertexOutput{
     vec4 position;
     float attributes[ATTRIBUTES_SIZE];
     float point_size;
-};
+} er_VertexOutput;
 
-struct fragment_input{
+typedef struct er_FragInput{
     vec4 frag_coord;
     float attributes[ATTRIBUTES_SIZE];
     float ddx[ATTRIBUTES_SIZE];
@@ -138,16 +173,16 @@ struct fragment_input{
     float dw_dx, dw_dy;
     vec2 point_coord; 
     float point_size;
-    unsigned int front_facing;
-};
+    er_Bool front_facing;
+} er_FragInput;
 
-struct texture;
+typedef struct er_Texture er_Texture;
 
-struct vertex_array;
+typedef struct er_VertexArray er_VertexArray;
 
-struct program;
+typedef struct er_Program er_Program;
 
-struct uniform_variables {
+typedef struct er_UniVars {
     float (*modelview)[4];
     float (*modelview_projection)[4];
     float (*modelview_inverse)[4];
@@ -159,30 +194,30 @@ struct uniform_variables {
     int *uniform_integer;
     float *uniform_float;
     void **uniform_ptr;
-    struct texture **uniform_texture;
-};
+    struct er_Texture **uniform_texture;
+} er_UniVars;
 
 /* Viewport settings */
 
-void er_viewport(unsigned int x, unsigned int y, unsigned int width, unsigned int height);
+er_StatusEnum er_viewport(unsigned int x, unsigned int y, unsigned int width, unsigned int height);
 
 /* Matrix stack utilities */
 
-void er_push_matrix();
+er_StatusEnum er_push_matrix();
 
-void er_pop_matrix();
+er_StatusEnum er_pop_matrix();
 
 void er_load_identity();
 
-void er_matrix_mode(unsigned char mode);
+er_StatusEnum er_matrix_mode(er_MatrixModeEnum mode);
 
-void er_load_matrix(mat4 matrix);
+er_StatusEnum er_load_matrix(mat4 matrix);
 
-void er_multiply_matrix(mat4 matrix);
+er_StatusEnum er_multiply_matrix(mat4 matrix);
 
-void er_get_matrix(mat4 matrix);
+er_StatusEnum er_get_matrix(mat4 matrix);
 
-void er_load_matrix_transpose(mat4 matrix);
+er_StatusEnum er_load_matrix_transpose(mat4 matrix);
 
 void er_orthographic(float l, float r, float b, float t, float n, float f);
 
@@ -208,156 +243,154 @@ void er_look_at(float eye_x, float eye_y, float eye_z, float at_x, float at_y, f
 
 /* Vertex Array routines */
 
-struct vertex_array* er_create_vertex_array();
+er_VertexArray* er_create_vertex_array();
 
-void er_delete_vertex_array(struct vertex_array *va);
+er_StatusEnum er_delete_vertex_array(er_VertexArray *va);
 
-void er_use_vertex_array(struct vertex_array *va);
+er_StatusEnum er_use_vertex_array(er_VertexArray *va);
 
-void er_enable_attribute_array(struct vertex_array *va, int array_enum, int enable);
+er_StatusEnum er_enable_attribute_array(er_VertexArray *va, er_VertexArrayEnum array_enum, er_Bool enable);
 
-void er_vertex_pointer(struct vertex_array *va, unsigned int stride, unsigned int components, float *pointer);
+er_StatusEnum er_vertex_pointer(er_VertexArray *va, unsigned int stride, unsigned int components, float *pointer);
 
-void er_color_pointer(struct vertex_array *va, unsigned int stride, unsigned int components, float *pointer);
+er_StatusEnum er_color_pointer(er_VertexArray *va, unsigned int stride, unsigned int components, float *pointer);
 
-void er_normal_pointer(struct vertex_array *va, unsigned int stride, float *pointer);
+er_StatusEnum er_normal_pointer(er_VertexArray *va, unsigned int stride, float *pointer);
 
-void er_fog_coord_pointer(struct vertex_array *va, unsigned int stride, float *pointer);
+er_StatusEnum er_fog_coord_pointer(er_VertexArray *va, unsigned int stride, float *pointer);
 
-void er_tex_coord_pointer(struct vertex_array *va, unsigned int stride, unsigned int components, float *pointer);
+er_StatusEnum er_tex_coord_pointer(er_VertexArray *va, unsigned int stride, unsigned int components, float *pointer);
 
 /* Drawing routines: Begin/End style */
 
-void er_begin(int primitive);
+er_StatusEnum er_begin(er_PrimitiveEnum primitive);
 
 void er_end();
 
 void er_normal3f(float nx, float ny, float nz);
 
-void er_normal3fv(float *normal);
+er_StatusEnum er_normal3fv(float *normal);
 
 void er_color3f(float r, float g, float b);
 
-void er_color3fv(float *color);
+er_StatusEnum er_color3fv(float *color);
 
 void er_color4f(float r, float g, float b, float a);
 
-void er_color4fv(float *color);
+er_StatusEnum er_color4fv(float *color);
 
 void er_vertex2f(float x, float y);
 
-void er_vertex2fv(float *point);
+er_StatusEnum er_vertex2fv(float *point);
 
 void er_vertex3f(float x, float y, float z);
 
-void er_vertex3fv(float *point);
+er_StatusEnum er_vertex3fv(float *point);
 
 void er_vertex4f(float x, float y, float z, float w);
 
-void er_vertex4fv(float *point);
+er_StatusEnum er_vertex4fv(float *point);
 
 void er_tex_coord1f(float s);
 
-void er_tex_coord1fv(float *tex_coord);
+er_StatusEnum er_tex_coord1fv(float *tex_coord);
 
 void er_tex_coord2f(float s, float t);
 
-void er_tex_coord2fv(float *tex_coord);
+er_StatusEnum er_tex_coord2fv(float *tex_coord);
 
 void er_tex_coord3f(float s, float t, float r);
 
-void er_tex_coord3fv(float *tex_coord);
+er_StatusEnum er_tex_coord3fv(float *tex_coord);
 
 void er_tex_coord4f(float s, float t, float r, float q);
 
-void er_tex_coord4fv(float *tex_coord);
+er_StatusEnum er_tex_coord4fv(float *tex_coord);
 
 void er_fog_coordf(float fog_coord);
 
-void er_fog_coordfv(float *fog_coord);
+er_StatusEnum er_fog_coordfv(float *fog_coord);
 
 /* Drawing routines (indexed and non indexed) */
 
-void er_draw_elements(unsigned int primitive, unsigned int size, unsigned int *index);
+er_StatusEnum er_draw_elements(er_PrimitiveEnum primitive, unsigned int size, unsigned int *index);
 
-void er_draw_arrays(unsigned int primitive, unsigned int first, unsigned int count);
+er_StatusEnum er_draw_arrays(er_PrimitiveEnum primitive, unsigned int first, unsigned int count);
 
 /* Init routines */
 
-int er_init();
+er_StatusEnum er_init();
 
 void er_quit();
 
-/* Error handling */
+/* Status Strings */
 
-int er_get_error();
-
-const char* er_get_error_string(int error);
+const char* er_status_string(er_StatusEnum status);
 
 /* State settings */
 
-void er_enable(unsigned int param, unsigned int enable);
+er_StatusEnum er_enable(er_EnableSettingEnum enumValue, er_Bool enable);
 
-void er_cull_face(unsigned int face);
+er_StatusEnum er_cull_face(er_PolygonFaceEnum face);
 
-void er_front_face(unsigned int orientation);
+er_StatusEnum er_front_face(er_PolygonOrientationEnum orientation);
 
-void er_polygon_mode(int face, int mode);
+er_StatusEnum er_polygon_mode(er_PolygonFaceEnum face, er_PolygonModeEnum mode);
 
-void er_point_parameteri(int param, int value);
+er_StatusEnum er_point_parameteri(er_PointSpriteEnum param, er_PointSpriteEnum value);
 
 /* Texture mapping setup */
 
-struct texture* er_create_texture1D(int width, int internal_format);
+er_StatusEnum er_create_texture1D(er_Texture** tex, int width, er_TextureFormatEnum internal_format);
 
-struct texture* er_create_texture2D(int width, int height, int internal_format);
+er_StatusEnum er_create_texture2D(er_Texture** tex, int width, int height, er_TextureFormatEnum internal_format);
 
-struct texture* er_create_texture_cubemap(int dimension, int internal_format);
+er_StatusEnum er_create_texture_cubemap(er_Texture **tex, int size, er_TextureFormatEnum internal_format);
 
-void er_delete_texture(struct texture *tex);
+er_StatusEnum er_delete_texture(er_Texture *tex);
 
-void* er_texture_ptr(struct texture *tex, int texture_target, int level);
+er_StatusEnum er_texture_ptr(er_Texture *tex, er_TextureTargetEnum texture_target, int level, float **data);
 
-void er_texture_filtering(struct texture *tex, int parameter, int value);
+er_StatusEnum er_texture_filtering(er_Texture *tex, er_TextureParamEnum parameter, er_TextureFilterEnum value);
 
-void er_texture_wrap_mode(struct texture *tex, int parameter, int value);
+er_StatusEnum er_texture_wrap_mode(er_Texture *tex, er_TextureParamEnum, er_TextureWrapModeEnum value);
 
-void er_generate_mipmaps(struct texture *tex);
+er_StatusEnum er_generate_mipmaps(er_Texture *tex);
 
 /* Texture functions */
 
-void texture_size(struct texture *tex, int lod, int *dimension);
+void er_texture_size(er_Texture *tex, int lod, int *size);
 
-void texel_fetch(struct texture *tex, int *coord, int lod, float *color);
+void er_texel_fetch(er_Texture *tex, int *coord, int lod, float *color);
 
-void texture_lod(struct texture *tex, float *coord, float lod, float *color);
+void er_texture_lod(er_Texture *tex, float *coord, float lod, float *color);
 
-void texture_grad(struct texture *tex, float *coord, float *ddx, float *ddy, float *color);
+void er_texture_grad(er_Texture *tex, float *coord, float *ddx, float *ddy, float *color);
 
-void write_texture(struct texture *tex, int *coord, int lod, float *color);
+void er_write_texture(er_Texture *tex, int *coord, int lod, float *color);
 
 /* Program settings */
 
-struct program* er_create_program();
+er_Program* er_create_program();
 
-void er_delete_program(struct program *p);
+er_StatusEnum er_delete_program(er_Program *p);
 
-void er_use_program(struct program *p);
+er_StatusEnum er_use_program(er_Program *p);
 
-void er_uniformi(struct program *p, int index, int value);
+er_StatusEnum er_uniformi(er_Program *p, unsigned int index, int value);
 
-void er_uniformf(struct program *p, int index, float value);
+er_StatusEnum er_uniformf(er_Program *p, unsigned int index, float value);
 
-void er_uniform_ptr(struct program *p, int index, void *pointer);
+er_StatusEnum er_uniform_ptr(er_Program *p, unsigned int index, void *pointer);
 
-void er_uniform_texture_ptr(struct program *p, int index, struct texture *tex_ptr);
+er_StatusEnum er_uniform_texture_ptr(er_Program *p, unsigned int index, er_Texture *tex_ptr);
 
-void er_varying_attributes(struct program *p, int number);
+er_StatusEnum er_varying_attributes(er_Program *p, int number);
 
-void er_load_fragment_shader(struct program *p, void (*fragment_shader)(int, int, struct fragment_input*, struct uniform_variables*));
+er_StatusEnum er_load_fragment_shader(er_Program *p, void (*fragment_shader)(int, int, er_FragInput*, er_UniVars*));
 
-void er_load_vertex_shader(struct program *p, void (*vertex_shader)(struct vertex_input*, struct vertex_output*, struct uniform_variables*) );
+er_StatusEnum er_load_vertex_shader(er_Program *p, void (*vertex_shader)(er_VertexInput*, er_VertexOutput*, er_UniVars*) );
 
-void er_load_homogeneous_division(struct program *p, void (*homogeneous_division)(struct vertex_output*) );
+er_StatusEnum er_load_homogeneous_division(er_Program *p, void (*homogeneous_division)(er_VertexOutput*) );
 
 #endif

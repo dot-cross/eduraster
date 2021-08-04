@@ -9,17 +9,17 @@
 #define POSITIVE_Z 4
 #define NEGATIVE_Z 5
 
-struct cubemap_uv{
+typedef struct Cubemap_uv{
     float u, v;
     float u_sign, v_sign;
     int cubemap_face;
     int u_index, v_index, max_axis_index;
     int (*wrap_u)(int, int);
     int (*wrap_v)(int, int);
-};
+} Cubemap_uv;
 
-int point_sprite_coord_origin;
-int point_sprite_enable;
+er_PointSpriteEnum point_sprite_coord_origin;
+er_Bool point_sprite_enable;
 
 static int repeat(int coord, int dimension){
     return coord & (dimension - 1);
@@ -29,31 +29,31 @@ static int clamp_to_edge(int coord, int dimension){
     return clamp(coord, 0, dimension - 1);
 }
 
-void texture_size(struct texture *tex, int lod, int *dimension){
+void er_texture_size(er_Texture *tex, int lod, int *dimension){
     tex->texture_size(tex, lod, dimension);
 }
 
-void texel_fetch(struct texture *tex, int *coord, int lod, float *color){
+void er_texel_fetch(er_Texture *tex, int *coord, int lod, float *color){
     tex->texel_fetch(tex, coord, lod, color);
 }
 
-void texture_lod(struct texture *tex, float *coord, float lod, float *color){
+void er_texture_lod(er_Texture *tex, float *coord, float lod, float *color){
     tex->texture_lod(tex, coord, lod, color);
 }
 
-void texture_grad(struct texture *tex, float *coord, float *ddx, float *ddy, float *color){
+void er_texture_grad(er_Texture *tex, float *coord, float *ddx, float *ddy, float *color){
     tex->texture_grad(tex, coord, ddx, ddy, color);
 }
 
-void write_texture(struct texture *tex, int *coord, int lod, float *color){
+void er_write_texture(er_Texture *tex, int *coord, int lod, float *color){
     tex->write_texture(tex, coord, lod, color);
 }
 
-static void texture1D_size(struct texture *tex, int lod, int *dimension){
+static void texture1D_size(er_Texture *tex, int lod, int *dimension){
     dimension[0] = tex->mipmaps[lod]->width;
 }
 
-static void write_texture1D(struct texture *tex, int *coord, int lod, float *color){
+static void write_texture1D(er_Texture *tex, int *coord, int lod, float *color){
 
     float *texels = tex->mipmaps[lod]->texels;
     int components = tex->components;
@@ -64,7 +64,7 @@ static void write_texture1D(struct texture *tex, int *coord, int lod, float *col
 
 }
 
-static void texture1D_texel_fetch(struct texture *tex, int *coord, int lod, float *color){
+static void texture1D_texel_fetch(er_Texture *tex, int *coord, int lod, float *color){
 
     float *texels = tex->mipmaps[lod]->texels;
     int components = tex->components;
@@ -112,7 +112,7 @@ static void sample_tex1D_linear(float *texels, int width, int components, float 
 
 }
 
-static float calculate_texture1D_lod_level(struct texture *tex, float *ddx, float *ddy){
+static float calculate_texture1D_lod_level(er_Texture *tex, float *ddx, float *ddy){
     float lod_level;
     int max_dimension = tex->mipmaps[0]->width;
     float max_derivative = max( ddx[VAR_S], ddy[VAR_S]);
@@ -124,18 +124,18 @@ static float calculate_texture1D_lod_level(struct texture *tex, float *ddx, floa
 }
 
 
-static void texture1D_lod_mag_linear_min_linear(struct texture *tex, float *coord, float lod_level, float *color){
-    struct mipmap *mip = tex->mipmaps[0];
+static void texture1D_lod_mag_linear_min_linear(er_Texture *tex, float *coord, float lod_level, float *color){
+    Mipmap *mip = tex->mipmaps[0];
     sample_tex1D_linear(mip->texels, mip->width, tex->components, coord[VAR_S], tex->wrap_s, color);
 }
 
-static void texture1D_lod_mag_nearest_min_nearest(struct texture *tex, float *coord, float lod_level, float *color){struct mipmap *mip = tex->mipmaps[0];
+static void texture1D_lod_mag_nearest_min_nearest(er_Texture *tex, float *coord, float lod_level, float *color){Mipmap *mip = tex->mipmaps[0];
     sample_tex1D_nearest(mip->texels, mip->width, tex->components, coord[VAR_S], tex->wrap_s, color);
 }
 
-static void texture1D_lod_mag_linear_min_nearest(struct texture *tex, float *coord, float lod_level, float *color){
+static void texture1D_lod_mag_linear_min_nearest(er_Texture *tex, float *coord, float lod_level, float *color){
 
-    struct mipmap *mip = tex->mipmaps[0];
+    Mipmap *mip = tex->mipmaps[0];
     if(lod_level <= 0){
         sample_tex1D_linear(mip->texels, mip->width, tex->components, coord[VAR_S], tex->wrap_s, color);
     }else{
@@ -144,9 +144,9 @@ static void texture1D_lod_mag_linear_min_nearest(struct texture *tex, float *coo
 
 }
 
-static void texture1D_lod_mag_nearest_min_linear(struct texture *tex, float *coord, float lod_level, float *color){
+static void texture1D_lod_mag_nearest_min_linear(er_Texture *tex, float *coord, float lod_level, float *color){
 
-    struct mipmap *mip = tex->mipmaps[0];
+    Mipmap *mip = tex->mipmaps[0];
     if(lod_level <= 0){
         sample_tex1D_nearest(mip->texels, mip->width, tex->components, coord[VAR_S], tex->wrap_s, color);
     }else{
@@ -155,10 +155,10 @@ static void texture1D_lod_mag_nearest_min_linear(struct texture *tex, float *coo
 
 }
 
-static void texture1D_lod_mag_linear_min_linear_mip_linear(struct texture *tex, float *coord, float lod_level, float *color){
+static void texture1D_lod_mag_linear_min_linear_mip_linear(er_Texture *tex, float *coord, float lod_level, float *color){
 
     if(lod_level <= 0){
-        struct mipmap *mip = tex->mipmaps[0];
+        Mipmap *mip = tex->mipmaps[0];
         sample_tex1D_linear(mip->texels, mip->width, tex->components, coord[VAR_S], tex->wrap_s, color);
     }else if(lod_level < tex->lod_max_level){
         int lower_level = (int)lod_level;
@@ -166,8 +166,8 @@ static void texture1D_lod_mag_linear_min_linear_mip_linear(struct texture *tex, 
         float lod_blend_factor = lod_level - lower_level;
         vec4 lower_color;
         vec4 upper_color;
-        struct mipmap *lower_mip = tex->mipmaps[lower_level];
-        struct mipmap *upper_mip = tex->mipmaps[upper_level];
+        Mipmap *lower_mip = tex->mipmaps[lower_level];
+        Mipmap *upper_mip = tex->mipmaps[upper_level];
         sample_tex1D_linear(lower_mip->texels, lower_mip->width, tex->components, coord[VAR_S], tex->wrap_s, lower_color);
         sample_tex1D_linear(upper_mip->texels, upper_mip->width, tex->components, coord[VAR_S], tex->wrap_s, upper_color);
         int c;
@@ -175,16 +175,16 @@ static void texture1D_lod_mag_linear_min_linear_mip_linear(struct texture *tex, 
             color[c] = lerp(lower_color[c], upper_color[c], lod_blend_factor);
         }
     }else{
-        struct mipmap *mip = tex->mipmaps[tex->lod_max_level];
+        Mipmap *mip = tex->mipmaps[tex->lod_max_level];
         sample_tex1D_linear(mip->texels, mip->width, tex->components, coord[VAR_S], tex->wrap_s, color);
     }
 
 }
 
-static void texture1D_lod_mag_linear_min_nearest_mip_linear(struct texture *tex, float *coord, float lod_level, float *color){
+static void texture1D_lod_mag_linear_min_nearest_mip_linear(er_Texture *tex, float *coord, float lod_level, float *color){
 
     if(lod_level <= 0){
-        struct mipmap *mip = tex->mipmaps[0];
+        Mipmap *mip = tex->mipmaps[0];
         sample_tex1D_linear(mip->texels, mip->width, tex->components, coord[VAR_S], tex->wrap_s, color);
     }else if(lod_level < tex->lod_max_level){
         int lower_level = (int)lod_level;
@@ -192,8 +192,8 @@ static void texture1D_lod_mag_linear_min_nearest_mip_linear(struct texture *tex,
         float lod_blend_factor = lod_level - lower_level;
         vec4 lower_color;
         vec4 upper_color;
-        struct mipmap *lower_mip = tex->mipmaps[lower_level];
-        struct mipmap *upper_mip = tex->mipmaps[upper_level];
+        Mipmap *lower_mip = tex->mipmaps[lower_level];
+        Mipmap *upper_mip = tex->mipmaps[upper_level];
         sample_tex1D_nearest(lower_mip->texels, lower_mip->width, tex->components, coord[VAR_S], tex->wrap_s, lower_color);
         sample_tex1D_nearest(upper_mip->texels, upper_mip->width, tex->components, coord[VAR_S], tex->wrap_s, upper_color);
         int c;
@@ -201,48 +201,48 @@ static void texture1D_lod_mag_linear_min_nearest_mip_linear(struct texture *tex,
             color[c] = lerp(lower_color[c], upper_color[c], lod_blend_factor);
         }
     }else{
-        struct mipmap *mip = tex->mipmaps[tex->lod_max_level];
+        Mipmap *mip = tex->mipmaps[tex->lod_max_level];
         sample_tex1D_nearest(mip->texels, mip->width, tex->components, coord[VAR_S], tex->wrap_s, color);
     }
 
 }
 
-static void texture1D_lod_mag_linear_min_linear_mip_nearest(struct texture *tex, float *coord, float lod_level, float *color){
+static void texture1D_lod_mag_linear_min_linear_mip_nearest(er_Texture *tex, float *coord, float lod_level, float *color){
 
     if(lod_level <= 0){
-        struct mipmap *mip = tex->mipmaps[0];
+        Mipmap *mip = tex->mipmaps[0];
         sample_tex1D_linear(mip->texels, mip->width, tex->components, coord[VAR_S], tex->wrap_s, color);
     }else if(lod_level < tex->lod_max_level){
         int round_level = uiround(lod_level);
-        struct mipmap *mip = tex->mipmaps[round_level];
+        Mipmap *mip = tex->mipmaps[round_level];
         sample_tex1D_linear(mip->texels, mip->width, tex->components, coord[VAR_S], tex->wrap_s, color);
     }else{
-        struct mipmap *mip = tex->mipmaps[tex->lod_max_level];
+        Mipmap *mip = tex->mipmaps[tex->lod_max_level];
         sample_tex1D_linear(mip->texels, mip->width, tex->components, coord[VAR_S], tex->wrap_s, color);
     }
 
 }
 
-static void texture1D_lod_mag_linear_min_nearest_mip_nearest(struct texture *tex, float *coord, float lod_level, float *color){
+static void texture1D_lod_mag_linear_min_nearest_mip_nearest(er_Texture *tex, float *coord, float lod_level, float *color){
 
     if(lod_level <= 0){
-        struct mipmap *mip = tex->mipmaps[0];
+        Mipmap *mip = tex->mipmaps[0];
         sample_tex1D_linear(mip->texels, mip->width, tex->components, coord[VAR_S], tex->wrap_s, color);
     }else if(lod_level < tex->lod_max_level){
         int round_level = uiround(lod_level);
-        struct mipmap *mip = tex->mipmaps[round_level];
+        Mipmap *mip = tex->mipmaps[round_level];
         sample_tex1D_nearest(mip->texels, mip->width, tex->components, coord[VAR_S], tex->wrap_s, color);
     }else{
-        struct mipmap *mip = tex->mipmaps[tex->lod_max_level];
+        Mipmap *mip = tex->mipmaps[tex->lod_max_level];
         sample_tex1D_nearest(mip->texels, mip->width, tex->components, coord[VAR_S], tex->wrap_s, color);
     }
 
 }
 
-static void texture1D_lod_mag_nearest_min_linear_mip_linear(struct texture *tex, float *coord, float lod_level, float *color){
+static void texture1D_lod_mag_nearest_min_linear_mip_linear(er_Texture *tex, float *coord, float lod_level, float *color){
 
     if(lod_level <= 0){
-        struct mipmap *mip = tex->mipmaps[0];
+        Mipmap *mip = tex->mipmaps[0];
         sample_tex1D_nearest(mip->texels, mip->width, tex->components, coord[VAR_S], tex->wrap_s, color);
     }else if(lod_level < tex->lod_max_level){
         int lower_level = (int)lod_level;
@@ -250,8 +250,8 @@ static void texture1D_lod_mag_nearest_min_linear_mip_linear(struct texture *tex,
         float lod_blend_factor = lod_level - lower_level;
         vec4 lower_color;
         vec4 upper_color;
-        struct mipmap *lower_mip = tex->mipmaps[lower_level];
-        struct mipmap *upper_mip = tex->mipmaps[upper_level];
+        Mipmap *lower_mip = tex->mipmaps[lower_level];
+        Mipmap *upper_mip = tex->mipmaps[upper_level];
         sample_tex1D_linear(lower_mip->texels, lower_mip->width, tex->components, coord[VAR_S], tex->wrap_s, lower_color);
         sample_tex1D_linear(upper_mip->texels, upper_mip->width, tex->components, coord[VAR_S], tex->wrap_s, upper_color);
         int c;
@@ -259,16 +259,16 @@ static void texture1D_lod_mag_nearest_min_linear_mip_linear(struct texture *tex,
             color[c] = lerp(lower_color[c], upper_color[c], lod_blend_factor);
         }
     }else{
-        struct mipmap *mip = tex->mipmaps[tex->lod_max_level];
+        Mipmap *mip = tex->mipmaps[tex->lod_max_level];
         sample_tex1D_linear(mip->texels, mip->width, tex->components, coord[VAR_S], tex->wrap_s, color);
     }
 
 }
 
-static void texture1D_lod_mag_nearest_min_nearest_mip_linear(struct texture *tex, float *coord, float lod_level, float *color){
+static void texture1D_lod_mag_nearest_min_nearest_mip_linear(er_Texture *tex, float *coord, float lod_level, float *color){
 
     if(lod_level <= 0){
-        struct mipmap *mip = tex->mipmaps[0];
+        Mipmap *mip = tex->mipmaps[0];
         sample_tex1D_nearest(mip->texels, mip->width, tex->components, coord[VAR_S], tex->wrap_s, color);
     }else if(lod_level < tex->lod_max_level){
         int lower_level = (int)lod_level;
@@ -276,8 +276,8 @@ static void texture1D_lod_mag_nearest_min_nearest_mip_linear(struct texture *tex
         float lod_blend_factor = lod_level - lower_level;
         vec4 lower_color;
         vec4 upper_color;
-        struct mipmap *lower_mip = tex->mipmaps[lower_level];
-        struct mipmap *upper_mip = tex->mipmaps[upper_level];
+        Mipmap *lower_mip = tex->mipmaps[lower_level];
+        Mipmap *upper_mip = tex->mipmaps[upper_level];
         sample_tex1D_nearest(lower_mip->texels, lower_mip->width, tex->components, coord[VAR_S], tex->wrap_s, lower_color);
         sample_tex1D_nearest(upper_mip->texels, upper_mip->width, tex->components, coord[VAR_S], tex->wrap_s, upper_color);
         int c;
@@ -285,58 +285,58 @@ static void texture1D_lod_mag_nearest_min_nearest_mip_linear(struct texture *tex
             color[c] = lerp(lower_color[c], upper_color[c], lod_blend_factor);
         }
     }else{
-        struct mipmap *mip = tex->mipmaps[tex->lod_max_level];
+        Mipmap *mip = tex->mipmaps[tex->lod_max_level];
         sample_tex1D_nearest(mip->texels, mip->width, tex->components, coord[VAR_S], tex->wrap_s, color);
     }
 
 }
 
-static void texture1D_lod_mag_nearest_min_linear_mip_nearest(struct texture *tex, float *coord, float lod_level, float *color){
+static void texture1D_lod_mag_nearest_min_linear_mip_nearest(er_Texture *tex, float *coord, float lod_level, float *color){
 
     if(lod_level <= 0){
-        struct mipmap *mip = tex->mipmaps[0];
+        Mipmap *mip = tex->mipmaps[0];
         sample_tex1D_nearest(mip->texels, mip->width, tex->components, coord[VAR_S], tex->wrap_s, color);
     }else if(lod_level < tex->lod_max_level){
         int round_level = uiround(lod_level);
-        struct mipmap *mip = tex->mipmaps[round_level];
+        Mipmap *mip = tex->mipmaps[round_level];
         sample_tex1D_linear(mip->texels, mip->width, tex->components, coord[VAR_S], tex->wrap_s, color);
     }else{
-        struct mipmap *mip = tex->mipmaps[tex->lod_max_level];
+        Mipmap *mip = tex->mipmaps[tex->lod_max_level];
         sample_tex1D_linear(mip->texels, mip->width, tex->components, coord[VAR_S], tex->wrap_s, color);
     }
 
 }
 
-static void texture1D_lod_mag_nearest_min_nearest_mip_nearest(struct texture *tex, float *coord, float lod_level, float *color){
+static void texture1D_lod_mag_nearest_min_nearest_mip_nearest(er_Texture *tex, float *coord, float lod_level, float *color){
 
     if(lod_level <= 0){
-        struct mipmap *mip = tex->mipmaps[0];
+        Mipmap *mip = tex->mipmaps[0];
         sample_tex1D_nearest(mip->texels, mip->width, tex->components, coord[VAR_S], tex->wrap_s, color);
     }else if(lod_level < tex->lod_max_level){
         int round_level = uiround(lod_level);
-        struct mipmap *mip = tex->mipmaps[round_level];
+        Mipmap *mip = tex->mipmaps[round_level];
         sample_tex1D_nearest(mip->texels, mip->width, tex->components, coord[VAR_S], tex->wrap_s, color);
     }else{
-        struct mipmap *mip = tex->mipmaps[tex->lod_max_level];
+        Mipmap *mip = tex->mipmaps[tex->lod_max_level];
         sample_tex1D_nearest(mip->texels, mip->width, tex->components, coord[VAR_S], tex->wrap_s, color);
     }
 
 }
 
 
-static void texture1D_grad_mag_linear_min_linear(struct texture *tex, float *coord, float *ddx, float *ddy, float *color){
-    struct mipmap *mip = tex->mipmaps[0];
+static void texture1D_grad_mag_linear_min_linear(er_Texture *tex, float *coord, float *ddx, float *ddy, float *color){
+    Mipmap *mip = tex->mipmaps[0];
     sample_tex1D_linear(mip->texels, mip->width, tex->components, coord[VAR_S], tex->wrap_s, color);
 }
 
-static void texture1D_grad_mag_nearest_min_nearest(struct texture *tex, float *coord, float *ddx, float *ddy, float *color){
-    struct mipmap *mip = tex->mipmaps[0];
+static void texture1D_grad_mag_nearest_min_nearest(er_Texture *tex, float *coord, float *ddx, float *ddy, float *color){
+    Mipmap *mip = tex->mipmaps[0];
     sample_tex1D_nearest(mip->texels, mip->width, tex->components, coord[VAR_S], tex->wrap_s, color);
 }
 
-static void texture1D_grad_mag_linear_min_nearest(struct texture *tex, float *coord, float *ddx, float *ddy, float *color){
+static void texture1D_grad_mag_linear_min_nearest(er_Texture *tex, float *coord, float *ddx, float *ddy, float *color){
 
-    struct mipmap *mip = tex->mipmaps[0];
+    Mipmap *mip = tex->mipmaps[0];
     float lod_level = calculate_texture1D_lod_level(tex, ddx, ddy);
     if(lod_level <= 0){
         sample_tex1D_linear(mip->texels, mip->width, tex->components, coord[VAR_S], tex->wrap_s, color);
@@ -346,9 +346,9 @@ static void texture1D_grad_mag_linear_min_nearest(struct texture *tex, float *co
 
 }
 
-static void texture1D_grad_mag_nearest_min_linear(struct texture *tex, float *coord, float *ddx, float *ddy, float *color){
+static void texture1D_grad_mag_nearest_min_linear(er_Texture *tex, float *coord, float *ddx, float *ddy, float *color){
   
-    struct mipmap *mip = tex->mipmaps[0];
+    Mipmap *mip = tex->mipmaps[0];
     float lod_level = calculate_texture1D_lod_level(tex, ddx, ddy);
     if(lod_level <= 0){
         sample_tex1D_nearest(mip->texels, mip->width, tex->components, coord[VAR_S], tex->wrap_s, color);
@@ -358,11 +358,11 @@ static void texture1D_grad_mag_nearest_min_linear(struct texture *tex, float *co
 
 }
 
-static void texture1D_grad_mag_linear_min_linear_mip_linear(struct texture *tex, float *coord, float *ddx, float *ddy, float *color){
+static void texture1D_grad_mag_linear_min_linear_mip_linear(er_Texture *tex, float *coord, float *ddx, float *ddy, float *color){
 
     float lod_level = calculate_texture1D_lod_level(tex, ddx, ddy);
     if(lod_level <= 0){
-        struct mipmap *mip = tex->mipmaps[0];
+        Mipmap *mip = tex->mipmaps[0];
         sample_tex1D_linear(mip->texels, mip->width, tex->components, coord[VAR_S], tex->wrap_s, color);
     }else if(lod_level < tex->lod_max_level){
         int lower_level = (int)lod_level;
@@ -370,8 +370,8 @@ static void texture1D_grad_mag_linear_min_linear_mip_linear(struct texture *tex,
         float lod_blend_factor = lod_level - lower_level;
         vec4 lower_color;
         vec4 upper_color;
-        struct mipmap *lower_mip = tex->mipmaps[lower_level];
-        struct mipmap *upper_mip = tex->mipmaps[upper_level];
+        Mipmap *lower_mip = tex->mipmaps[lower_level];
+        Mipmap *upper_mip = tex->mipmaps[upper_level];
         sample_tex1D_linear(lower_mip->texels, lower_mip->width, tex->components, coord[VAR_S], tex->wrap_s, lower_color);
         sample_tex1D_linear(upper_mip->texels, upper_mip->width, tex->components, coord[VAR_S], tex->wrap_s, upper_color);
         int c;
@@ -379,17 +379,17 @@ static void texture1D_grad_mag_linear_min_linear_mip_linear(struct texture *tex,
             color[c] = lerp(lower_color[c], upper_color[c], lod_blend_factor);
         }
     }else{
-        struct mipmap *mip = tex->mipmaps[tex->lod_max_level];
+        Mipmap *mip = tex->mipmaps[tex->lod_max_level];
         sample_tex1D_linear(mip->texels, mip->width, tex->components, coord[VAR_S], tex->wrap_s, color);
     }
 
 }
 
-static void texture1D_grad_mag_linear_min_nearest_mip_linear(struct texture *tex, float *coord, float *ddx, float *ddy, float *color){
+static void texture1D_grad_mag_linear_min_nearest_mip_linear(er_Texture *tex, float *coord, float *ddx, float *ddy, float *color){
 
     float lod_level = calculate_texture1D_lod_level(tex, ddx, ddy);
     if(lod_level <= 0){
-        struct mipmap *mip = tex->mipmaps[0];
+        Mipmap *mip = tex->mipmaps[0];
         sample_tex1D_linear(mip->texels, mip->width, tex->components, coord[VAR_S], tex->wrap_s, color);
     }else if(lod_level < tex->lod_max_level){
         int lower_level = (int)lod_level;
@@ -397,8 +397,8 @@ static void texture1D_grad_mag_linear_min_nearest_mip_linear(struct texture *tex
         float lod_blend_factor = lod_level - lower_level;
         vec4 lower_color;
         vec4 upper_color;
-        struct mipmap *lower_mip = tex->mipmaps[lower_level];
-        struct mipmap *upper_mip = tex->mipmaps[upper_level];
+        Mipmap *lower_mip = tex->mipmaps[lower_level];
+        Mipmap *upper_mip = tex->mipmaps[upper_level];
         sample_tex1D_nearest(lower_mip->texels, lower_mip->width, tex->components, coord[VAR_S], tex->wrap_s, lower_color);
         sample_tex1D_nearest(upper_mip->texels, upper_mip->width, tex->components, coord[VAR_S], tex->wrap_s, upper_color);
         int c;
@@ -406,51 +406,51 @@ static void texture1D_grad_mag_linear_min_nearest_mip_linear(struct texture *tex
             color[c] = lerp(lower_color[c], upper_color[c], lod_blend_factor);
         }
     }else{
-        struct mipmap *mip = tex->mipmaps[tex->lod_max_level];
+        Mipmap *mip = tex->mipmaps[tex->lod_max_level];
         sample_tex1D_nearest(mip->texels, mip->width, tex->components, coord[VAR_S], tex->wrap_s, color);
     }
 
 }
 
-static void texture1D_grad_mag_linear_min_linear_mip_nearest(struct texture *tex, float *coord, float *ddx, float *ddy, float *color){
+static void texture1D_grad_mag_linear_min_linear_mip_nearest(er_Texture *tex, float *coord, float *ddx, float *ddy, float *color){
 
     float lod_level = calculate_texture1D_lod_level(tex, ddx, ddy);
     if(lod_level <= 0){
-        struct mipmap *mip = tex->mipmaps[0];
+        Mipmap *mip = tex->mipmaps[0];
         sample_tex1D_linear(mip->texels, mip->width, tex->components, coord[VAR_S], tex->wrap_s, color);
     }else if(lod_level < tex->lod_max_level){
         int round_level = uiround(lod_level);
-        struct mipmap *mip = tex->mipmaps[round_level];
+        Mipmap *mip = tex->mipmaps[round_level];
         sample_tex1D_linear(mip->texels, mip->width, tex->components, coord[VAR_S], tex->wrap_s, color);
     }else{
-        struct mipmap *mip = tex->mipmaps[tex->lod_max_level];
+        Mipmap *mip = tex->mipmaps[tex->lod_max_level];
         sample_tex1D_linear(mip->texels, mip->width, tex->components, coord[VAR_S], tex->wrap_s, color);
     }
 
 }
 
-static void texture1D_grad_mag_linear_min_nearest_mip_nearest(struct texture *tex, float *coord, float *ddx, float *ddy, float *color){
+static void texture1D_grad_mag_linear_min_nearest_mip_nearest(er_Texture *tex, float *coord, float *ddx, float *ddy, float *color){
 
     float lod_level = calculate_texture1D_lod_level(tex, ddx, ddy);
     if(lod_level <= 0){
-        struct mipmap *mip = tex->mipmaps[0];
+        Mipmap *mip = tex->mipmaps[0];
         sample_tex1D_linear(mip->texels, mip->width, tex->components, coord[VAR_S], tex->wrap_s, color);
     }else if(lod_level < tex->lod_max_level){
         int round_level = uiround(lod_level);
-        struct mipmap *mip = tex->mipmaps[round_level];
+        Mipmap *mip = tex->mipmaps[round_level];
         sample_tex1D_nearest(mip->texels, mip->width, tex->components, coord[VAR_S], tex->wrap_s, color);
     }else{
-        struct mipmap *mip = tex->mipmaps[tex->lod_max_level];
+        Mipmap *mip = tex->mipmaps[tex->lod_max_level];
         sample_tex1D_nearest(mip->texels, mip->width, tex->components, coord[VAR_S], tex->wrap_s, color);
     }
 
 }
 
-static void texture1D_grad_mag_nearest_min_linear_mip_linear(struct texture *tex, float *coord, float *ddx, float *ddy, float *color){
+static void texture1D_grad_mag_nearest_min_linear_mip_linear(er_Texture *tex, float *coord, float *ddx, float *ddy, float *color){
 
     float lod_level = calculate_texture1D_lod_level(tex, ddx, ddy);
     if(lod_level <= 0){
-        struct mipmap *mip = tex->mipmaps[0];
+        Mipmap *mip = tex->mipmaps[0];
         sample_tex1D_nearest(mip->texels, mip->width, tex->components, coord[VAR_S], tex->wrap_s, color);
     }else if(lod_level < tex->lod_max_level){
         int lower_level = (int)lod_level;
@@ -458,8 +458,8 @@ static void texture1D_grad_mag_nearest_min_linear_mip_linear(struct texture *tex
         float lod_blend_factor = lod_level - lower_level;
         vec4 lower_color;
         vec4 upper_color;
-        struct mipmap *lower_mip = tex->mipmaps[lower_level];
-        struct mipmap *upper_mip = tex->mipmaps[upper_level];
+        Mipmap *lower_mip = tex->mipmaps[lower_level];
+        Mipmap *upper_mip = tex->mipmaps[upper_level];
         sample_tex1D_linear(lower_mip->texels, lower_mip->width, tex->components, coord[VAR_S], tex->wrap_s, lower_color);
         sample_tex1D_linear(upper_mip->texels, upper_mip->width, tex->components, coord[VAR_S], tex->wrap_s, upper_color);
         int c;
@@ -467,17 +467,17 @@ static void texture1D_grad_mag_nearest_min_linear_mip_linear(struct texture *tex
             color[c] = lerp(lower_color[c], upper_color[c], lod_blend_factor);
         }
     }else{
-        struct mipmap *mip = tex->mipmaps[tex->lod_max_level];
+        Mipmap *mip = tex->mipmaps[tex->lod_max_level];
         sample_tex1D_linear(mip->texels, mip->width, tex->components, coord[VAR_S], tex->wrap_s, color);
     }
 
 }
 
-static void texture1D_grad_mag_nearest_min_nearest_mip_linear(struct texture *tex, float *coord, float *ddx, float *ddy, float *color){
+static void texture1D_grad_mag_nearest_min_nearest_mip_linear(er_Texture *tex, float *coord, float *ddx, float *ddy, float *color){
 
     float lod_level = calculate_texture1D_lod_level(tex, ddx, ddy);
     if(lod_level <= 0){
-        struct mipmap *mip = tex->mipmaps[0];
+        Mipmap *mip = tex->mipmaps[0];
         sample_tex1D_nearest(mip->texels, mip->width, tex->components, coord[VAR_S], tex->wrap_s, color);
     }else if(lod_level < tex->lod_max_level){
         int lower_level = (int)lod_level;
@@ -485,8 +485,8 @@ static void texture1D_grad_mag_nearest_min_nearest_mip_linear(struct texture *te
         float lod_blend_factor = lod_level - lower_level;
         vec4 lower_color;
         vec4 upper_color;
-        struct mipmap *lower_mip = tex->mipmaps[lower_level];
-        struct mipmap *upper_mip = tex->mipmaps[upper_level];
+        Mipmap *lower_mip = tex->mipmaps[lower_level];
+        Mipmap *upper_mip = tex->mipmaps[upper_level];
         sample_tex1D_nearest(lower_mip->texels, lower_mip->width, tex->components, coord[VAR_S], tex->wrap_s, lower_color);
         sample_tex1D_nearest(upper_mip->texels, upper_mip->width, tex->components, coord[VAR_S], tex->wrap_s, upper_color);
         int c;
@@ -494,52 +494,52 @@ static void texture1D_grad_mag_nearest_min_nearest_mip_linear(struct texture *te
             color[c] = lerp(lower_color[c], upper_color[c], lod_blend_factor);
         }
     }else{
-        struct mipmap *mip = tex->mipmaps[tex->lod_max_level];
+        Mipmap *mip = tex->mipmaps[tex->lod_max_level];
         sample_tex1D_nearest(mip->texels, mip->width, tex->components, coord[VAR_S], tex->wrap_s, color);
     }
 
 }
 
-static void texture1D_grad_mag_nearest_min_linear_mip_nearest(struct texture *tex, float *coord, float *ddx, float *ddy, float *color){
+static void texture1D_grad_mag_nearest_min_linear_mip_nearest(er_Texture *tex, float *coord, float *ddx, float *ddy, float *color){
 
     float lod_level = calculate_texture1D_lod_level(tex, ddx, ddy);
     if(lod_level <= 0){
-        struct mipmap *mip = tex->mipmaps[0];
+        Mipmap *mip = tex->mipmaps[0];
         sample_tex1D_nearest(mip->texels, mip->width, tex->components, coord[VAR_S], tex->wrap_s, color);
     }else if(lod_level < tex->lod_max_level){
         int round_level = uiround(lod_level);
-        struct mipmap *mip = tex->mipmaps[round_level];
+        Mipmap *mip = tex->mipmaps[round_level];
         sample_tex1D_linear(mip->texels, mip->width, tex->components, coord[VAR_S], tex->wrap_s, color);
     }else{
-        struct mipmap *mip = tex->mipmaps[tex->lod_max_level];
+        Mipmap *mip = tex->mipmaps[tex->lod_max_level];
         sample_tex1D_linear(mip->texels, mip->width, tex->components, coord[VAR_S], tex->wrap_s, color);
     }
 
 }
 
-static void texture1D_grad_mag_nearest_min_nearest_mip_nearest(struct texture *tex, float *coord, float *ddx, float *ddy, float *color){
+static void texture1D_grad_mag_nearest_min_nearest_mip_nearest(er_Texture *tex, float *coord, float *ddx, float *ddy, float *color){
 
     float lod_level = calculate_texture1D_lod_level(tex, ddx, ddy);
     if(lod_level <= 0){
-        struct mipmap *mip = tex->mipmaps[0];
+        Mipmap *mip = tex->mipmaps[0];
         sample_tex1D_nearest(mip->texels, mip->width, tex->components, coord[VAR_S], tex->wrap_s, color);
     }else if(lod_level < tex->lod_max_level){
         int round_level = uiround(lod_level);
-        struct mipmap *mip = tex->mipmaps[round_level];
+        Mipmap *mip = tex->mipmaps[round_level];
         sample_tex1D_nearest(mip->texels, mip->width, tex->components, coord[VAR_S], tex->wrap_s, color);
     }else{
-        struct mipmap *mip = tex->mipmaps[tex->lod_max_level];
+        Mipmap *mip = tex->mipmaps[tex->lod_max_level];
         sample_tex1D_nearest(mip->texels, mip->width, tex->components, coord[VAR_S], tex->wrap_s, color);
     }
 
 }
 
-static void texture2D_size(struct texture *tex, int lod, int* dimension){
+static void texture2D_size(er_Texture *tex, int lod, int* dimension){
     dimension[0] = tex->mipmaps[lod]->width;
     dimension[1] = tex->mipmaps[lod]->height;
 }
 
-static void write_texture2D(struct texture *tex, int *coord, int lod, float *color){
+static void write_texture2D(er_Texture *tex, int *coord, int lod, float *color){
 
     float *texels = tex->mipmaps[lod]->texels;
     int width = tex->mipmaps[lod]->width;
@@ -551,7 +551,7 @@ static void write_texture2D(struct texture *tex, int *coord, int lod, float *col
 
 }
 
-static void texture2D_texel_fetch(struct texture *tex, int *coord, int lod, float *color){
+static void texture2D_texel_fetch(er_Texture *tex, int *coord, int lod, float *color){
 
     float *texels = tex->mipmaps[lod]->texels;
     int width = tex->mipmaps[lod]->width;
@@ -613,7 +613,7 @@ static void sample_tex2D_bilinear(float *texels, int w, int h, int components, f
 
 }
 
-static float calculate_texture2D_lod_level(struct texture *tex, float *ddx, float *ddy){
+static float calculate_texture2D_lod_level(er_Texture *tex, float *ddx, float *ddy){
     float lod_level;
     int max_dimension = max(tex->mipmaps[0]->width, tex->mipmaps[0]->height);
     float diameter = max( ddx[VAR_S] * ddx[VAR_S] + ddx[VAR_T] * ddx[VAR_T], ddy[VAR_S] * ddy[VAR_S] + ddy[VAR_T] * ddy[VAR_T] );
@@ -624,19 +624,19 @@ static float calculate_texture2D_lod_level(struct texture *tex, float *ddx, floa
     return lod_level;
 }
 
-static void texture2D_lod_mag_linear_min_linear(struct texture *tex, float *coord, float lod_level, float *color){
-    struct mipmap *mip = tex->mipmaps[0];
+static void texture2D_lod_mag_linear_min_linear(er_Texture *tex, float *coord, float lod_level, float *color){
+    Mipmap *mip = tex->mipmaps[0];
     sample_tex2D_bilinear(mip->texels, mip->width, mip->height, tex->components, coord[VAR_S], coord[VAR_T], tex->wrap_s, tex->wrap_t, color);
 }
 
-static void texture2D_lod_mag_nearest_min_nearest(struct texture *tex, float *coord, float lod_level, float *color){
-    struct mipmap *mip = tex->mipmaps[0];
+static void texture2D_lod_mag_nearest_min_nearest(er_Texture *tex, float *coord, float lod_level, float *color){
+    Mipmap *mip = tex->mipmaps[0];
     sample_tex2D_nearest(mip->texels, mip->width, mip->height, tex->components, coord[VAR_S], coord[VAR_T], tex->wrap_s, tex->wrap_t, color);
 }
 
-static void texture2D_lod_mag_linear_min_nearest(struct texture *tex, float *coord, float lod_level, float *color){
+static void texture2D_lod_mag_linear_min_nearest(er_Texture *tex, float *coord, float lod_level, float *color){
 
-    struct mipmap *mip = tex->mipmaps[0];
+    Mipmap *mip = tex->mipmaps[0];
     if(lod_level <= 0){
         sample_tex2D_bilinear(mip->texels, mip->width, mip->height, tex->components, coord[VAR_S], coord[VAR_T], tex->wrap_s, tex->wrap_t, color);
     }else{
@@ -645,9 +645,9 @@ static void texture2D_lod_mag_linear_min_nearest(struct texture *tex, float *coo
 
 }
 
-static void texture2D_lod_mag_nearest_min_linear(struct texture *tex, float *coord, float lod_level, float *color){
+static void texture2D_lod_mag_nearest_min_linear(er_Texture *tex, float *coord, float lod_level, float *color){
 
-    struct mipmap *mip = tex->mipmaps[0];
+    Mipmap *mip = tex->mipmaps[0];
     if(lod_level <= 0){
         sample_tex2D_nearest(mip->texels, mip->width, mip->height, tex->components, coord[VAR_S], coord[VAR_T], tex->wrap_s, tex->wrap_t, color);
     }else{
@@ -656,10 +656,10 @@ static void texture2D_lod_mag_nearest_min_linear(struct texture *tex, float *coo
 
 }
 
-static void texture2D_lod_mag_linear_min_linear_mip_linear(struct texture *tex, float *coord, float lod_level, float *color){
+static void texture2D_lod_mag_linear_min_linear_mip_linear(er_Texture *tex, float *coord, float lod_level, float *color){
 
     if(lod_level <= 0){
-        struct mipmap *mip = tex->mipmaps[0];
+        Mipmap *mip = tex->mipmaps[0];
         sample_tex2D_bilinear(mip->texels, mip->width, mip->height, tex->components, coord[VAR_S], coord[VAR_T], tex->wrap_s, tex->wrap_t, color);
     }else if(lod_level < tex->lod_max_level){
         int lower_level = (int)lod_level;
@@ -667,8 +667,8 @@ static void texture2D_lod_mag_linear_min_linear_mip_linear(struct texture *tex, 
         float lod_blend_factor = lod_level - lower_level;
         vec4 lower_color;
         vec4 upper_color;
-        struct mipmap *lower_mip = tex->mipmaps[lower_level];
-        struct mipmap *upper_mip = tex->mipmaps[upper_level];
+        Mipmap *lower_mip = tex->mipmaps[lower_level];
+        Mipmap *upper_mip = tex->mipmaps[upper_level];
         sample_tex2D_bilinear(lower_mip->texels, lower_mip->width, lower_mip->height, tex->components, coord[VAR_S], coord[VAR_T], tex->wrap_s, tex->wrap_t, lower_color);
         sample_tex2D_bilinear(upper_mip->texels, upper_mip->width, upper_mip->height, tex->components, coord[VAR_S], coord[VAR_T], tex->wrap_s, tex->wrap_t, upper_color);
         int c;
@@ -676,16 +676,16 @@ static void texture2D_lod_mag_linear_min_linear_mip_linear(struct texture *tex, 
             color[c] = lerp(lower_color[c], upper_color[c], lod_blend_factor);
         }
     }else{
-        struct mipmap *mip = tex->mipmaps[tex->lod_max_level];
+        Mipmap *mip = tex->mipmaps[tex->lod_max_level];
         sample_tex2D_bilinear(mip->texels, mip->width, mip->height, tex->components, coord[VAR_S], coord[VAR_T], tex->wrap_s, tex->wrap_t, color);
     }
 
 }
 
-static void texture2D_lod_mag_linear_min_nearest_mip_linear(struct texture *tex, float *coord, float lod_level, float *color){
+static void texture2D_lod_mag_linear_min_nearest_mip_linear(er_Texture *tex, float *coord, float lod_level, float *color){
 
     if(lod_level <= 0){
-        struct mipmap *mip = tex->mipmaps[0];
+        Mipmap *mip = tex->mipmaps[0];
         sample_tex2D_bilinear(mip->texels, mip->width, mip->height, tex->components, coord[VAR_S], coord[VAR_T], tex->wrap_s, tex->wrap_t, color);
     }else if(lod_level < tex->lod_max_level){
         int lower_level = (int)lod_level;
@@ -693,8 +693,8 @@ static void texture2D_lod_mag_linear_min_nearest_mip_linear(struct texture *tex,
         float lod_blend_factor = lod_level - lower_level;
         vec4 lower_color;
         vec4 upper_color;
-        struct mipmap *lower_mip = tex->mipmaps[lower_level];
-        struct mipmap *upper_mip = tex->mipmaps[upper_level];
+        Mipmap *lower_mip = tex->mipmaps[lower_level];
+        Mipmap *upper_mip = tex->mipmaps[upper_level];
         sample_tex2D_nearest(lower_mip->texels, lower_mip->width, lower_mip->height, tex->components, coord[VAR_S], coord[VAR_T], tex->wrap_s, tex->wrap_t, lower_color);
         sample_tex2D_nearest(upper_mip->texels, upper_mip->width, upper_mip->height, tex->components, coord[VAR_S], coord[VAR_T], tex->wrap_s, tex->wrap_t, upper_color);
         int c;
@@ -702,48 +702,48 @@ static void texture2D_lod_mag_linear_min_nearest_mip_linear(struct texture *tex,
             color[c] = lerp(lower_color[c], upper_color[c], lod_blend_factor);
         }
     }else{
-        struct mipmap *mip = tex->mipmaps[tex->lod_max_level];
+        Mipmap *mip = tex->mipmaps[tex->lod_max_level];
         sample_tex2D_nearest(mip->texels, mip->width, mip->height, tex->components, coord[VAR_S], coord[VAR_T], tex->wrap_s, tex->wrap_t, color);
     }
 
 }
 
-static void texture2D_lod_mag_linear_min_linear_mip_nearest(struct texture *tex, float *coord, float lod_level, float *color){
+static void texture2D_lod_mag_linear_min_linear_mip_nearest(er_Texture *tex, float *coord, float lod_level, float *color){
 
     if(lod_level <= 0){
-        struct mipmap *mip = tex->mipmaps[0];
+        Mipmap *mip = tex->mipmaps[0];
         sample_tex2D_bilinear(mip->texels, mip->width, mip->height, tex->components, coord[VAR_S], coord[VAR_T], tex->wrap_s, tex->wrap_t, color);
     }else if(lod_level < tex->lod_max_level){
         int round_level = uiround(lod_level);
-        struct mipmap *mip = tex->mipmaps[round_level];
+        Mipmap *mip = tex->mipmaps[round_level];
         sample_tex2D_bilinear(mip->texels, mip->width, mip->height, tex->components, coord[VAR_S], coord[VAR_T], tex->wrap_s, tex->wrap_t, color);
     }else{
-        struct mipmap *mip = tex->mipmaps[tex->lod_max_level];
+        Mipmap *mip = tex->mipmaps[tex->lod_max_level];
         sample_tex2D_bilinear(mip->texels, mip->width, mip->height, tex->components, coord[VAR_S], coord[VAR_T], tex->wrap_s, tex->wrap_t, color);
     }
 
 }
 
-static void texture2D_lod_mag_linear_min_nearest_mip_nearest(struct texture *tex, float *coord, float lod_level, float *color){
+static void texture2D_lod_mag_linear_min_nearest_mip_nearest(er_Texture *tex, float *coord, float lod_level, float *color){
 
     if(lod_level <= 0){
-        struct mipmap *mip = tex->mipmaps[0];
+        Mipmap *mip = tex->mipmaps[0];
         sample_tex2D_bilinear(mip->texels, mip->width, mip->height, tex->components, coord[VAR_S], coord[VAR_T], tex->wrap_s, tex->wrap_t, color);
     }else if(lod_level < tex->lod_max_level){
         int round_level = uiround(lod_level);
-        struct mipmap *mip = tex->mipmaps[round_level];
+        Mipmap *mip = tex->mipmaps[round_level];
         sample_tex2D_nearest(mip->texels, mip->width, mip->height, tex->components, coord[VAR_S], coord[VAR_T], tex->wrap_s, tex->wrap_t, color);
     }else{
-        struct mipmap *mip = tex->mipmaps[tex->lod_max_level];
+        Mipmap *mip = tex->mipmaps[tex->lod_max_level];
         sample_tex2D_nearest(mip->texels, mip->width, mip->height, tex->components, coord[VAR_S], coord[VAR_T], tex->wrap_s, tex->wrap_t, color);
     }
 
 }
 
-static void texture2D_lod_mag_nearest_min_linear_mip_linear(struct texture *tex, float *coord, float lod_level, float *color){
+static void texture2D_lod_mag_nearest_min_linear_mip_linear(er_Texture *tex, float *coord, float lod_level, float *color){
 
     if(lod_level <= 0){
-        struct mipmap *mip = tex->mipmaps[0];
+        Mipmap *mip = tex->mipmaps[0];
         sample_tex2D_nearest(mip->texels, mip->width, mip->height, tex->components, coord[VAR_S], coord[VAR_T], tex->wrap_s, tex->wrap_t, color);
     }else if(lod_level < tex->lod_max_level){
         int lower_level = (int)lod_level;
@@ -751,8 +751,8 @@ static void texture2D_lod_mag_nearest_min_linear_mip_linear(struct texture *tex,
         float lod_blend_factor = lod_level - lower_level;
         vec4 lower_color;
         vec4 upper_color;
-        struct mipmap *lower_mip = tex->mipmaps[lower_level];
-        struct mipmap *upper_mip = tex->mipmaps[upper_level];
+        Mipmap *lower_mip = tex->mipmaps[lower_level];
+        Mipmap *upper_mip = tex->mipmaps[upper_level];
         sample_tex2D_bilinear(lower_mip->texels, lower_mip->width, lower_mip->height, tex->components, coord[VAR_S], coord[VAR_T], tex->wrap_s, tex->wrap_t, lower_color);
         sample_tex2D_bilinear(upper_mip->texels, upper_mip->width, upper_mip->height, tex->components, coord[VAR_S], coord[VAR_T], tex->wrap_s, tex->wrap_t, upper_color);
         int c;
@@ -760,16 +760,16 @@ static void texture2D_lod_mag_nearest_min_linear_mip_linear(struct texture *tex,
             color[c] = lerp(lower_color[c], upper_color[c], lod_blend_factor);
         }
     }else{
-        struct mipmap *mip = tex->mipmaps[tex->lod_max_level];
+        Mipmap *mip = tex->mipmaps[tex->lod_max_level];
         sample_tex2D_bilinear(mip->texels, mip->width, mip->height, tex->components, coord[VAR_S], coord[VAR_T], tex->wrap_s, tex->wrap_t, color);
     }
 
 }
 
-static void texture2D_lod_mag_nearest_min_nearest_mip_linear(struct texture *tex, float *coord, float lod_level, float *color){
+static void texture2D_lod_mag_nearest_min_nearest_mip_linear(er_Texture *tex, float *coord, float lod_level, float *color){
 
     if(lod_level <= 0){
-        struct mipmap *mip = tex->mipmaps[0];
+        Mipmap *mip = tex->mipmaps[0];
         sample_tex2D_nearest(mip->texels, mip->width, mip->height, tex->components, coord[VAR_S], coord[VAR_T], tex->wrap_s, tex->wrap_t, color);
     }else if(lod_level < tex->lod_max_level){
         int lower_level = (int)lod_level;
@@ -777,8 +777,8 @@ static void texture2D_lod_mag_nearest_min_nearest_mip_linear(struct texture *tex
         float lod_blend_factor = lod_level - lower_level;
         vec4 lower_color;
         vec4 upper_color;
-        struct mipmap *lower_mip = tex->mipmaps[lower_level];
-        struct mipmap *upper_mip = tex->mipmaps[upper_level];
+        Mipmap *lower_mip = tex->mipmaps[lower_level];
+        Mipmap *upper_mip = tex->mipmaps[upper_level];
         sample_tex2D_nearest(lower_mip->texels, lower_mip->width, lower_mip->height, tex->components, coord[VAR_S], coord[VAR_T], tex->wrap_s, tex->wrap_t, lower_color);
         sample_tex2D_nearest(upper_mip->texels, upper_mip->width, upper_mip->height, tex->components, coord[VAR_S], coord[VAR_T], tex->wrap_s, tex->wrap_t, upper_color);
         int c;
@@ -786,58 +786,58 @@ static void texture2D_lod_mag_nearest_min_nearest_mip_linear(struct texture *tex
             color[c] = lerp(lower_color[c], upper_color[c], lod_blend_factor);
         }
     }else{
-        struct mipmap *mip = tex->mipmaps[tex->lod_max_level];
+        Mipmap *mip = tex->mipmaps[tex->lod_max_level];
         sample_tex2D_nearest(mip->texels, mip->width, mip->height, tex->components, coord[VAR_S], coord[VAR_T], tex->wrap_s, tex->wrap_t, color);
     }
 
 }
 
-static void texture2D_lod_mag_nearest_min_linear_mip_nearest(struct texture *tex, float *coord, float lod_level, float *color){
+static void texture2D_lod_mag_nearest_min_linear_mip_nearest(er_Texture *tex, float *coord, float lod_level, float *color){
 
     if(lod_level <= 0){
-        struct mipmap *mip = tex->mipmaps[0];
+        Mipmap *mip = tex->mipmaps[0];
         sample_tex2D_nearest(mip->texels, mip->width, mip->height, tex->components, coord[VAR_S], coord[VAR_T], tex->wrap_s, tex->wrap_t, color);
     }else if(lod_level < tex->lod_max_level){
         int round_level = uiround(lod_level);
-        struct mipmap *mip = tex->mipmaps[round_level];
+        Mipmap *mip = tex->mipmaps[round_level];
         sample_tex2D_bilinear(mip->texels, mip->width, mip->height, tex->components, coord[VAR_S], coord[VAR_T], tex->wrap_s, tex->wrap_t, color);
     }else{
-        struct mipmap *mip = tex->mipmaps[tex->lod_max_level];
+        Mipmap *mip = tex->mipmaps[tex->lod_max_level];
         sample_tex2D_bilinear(mip->texels, mip->width, mip->height, tex->components, coord[VAR_S], coord[VAR_T], tex->wrap_s, tex->wrap_t, color);
     }
 
 }
 
-static void texture2D_lod_mag_nearest_min_nearest_mip_nearest(struct texture *tex, float *coord, float lod_level, float *color){
+static void texture2D_lod_mag_nearest_min_nearest_mip_nearest(er_Texture *tex, float *coord, float lod_level, float *color){
 
     if(lod_level <= 0){
-        struct mipmap *mip = tex->mipmaps[0];
+        Mipmap *mip = tex->mipmaps[0];
         sample_tex2D_nearest(mip->texels, mip->width, mip->height, tex->components, coord[VAR_S], coord[VAR_T], tex->wrap_s, tex->wrap_t, color);
     }else if(lod_level < tex->lod_max_level){
         int round_level = uiround(lod_level);
-        struct mipmap *mip = tex->mipmaps[round_level];
+        Mipmap *mip = tex->mipmaps[round_level];
         sample_tex2D_nearest(mip->texels, mip->width, mip->height, tex->components, coord[VAR_S], coord[VAR_T], tex->wrap_s, tex->wrap_t, color);
     }else{
-        struct mipmap *mip = tex->mipmaps[tex->lod_max_level];
+        Mipmap *mip = tex->mipmaps[tex->lod_max_level];
         sample_tex2D_nearest(mip->texels, mip->width, mip->height, tex->components, coord[VAR_S], coord[VAR_T], tex->wrap_s, tex->wrap_t, color);
     }
 
 }
 
-static void texture2D_grad_mag_linear_min_linear(struct texture *tex, float *coord, float *ddx, float *ddy, float *color){
-    struct mipmap *mip = tex->mipmaps[0];
+static void texture2D_grad_mag_linear_min_linear(er_Texture *tex, float *coord, float *ddx, float *ddy, float *color){
+    Mipmap *mip = tex->mipmaps[0];
     sample_tex2D_bilinear(mip->texels, mip->width, mip->height, tex->components, coord[VAR_S], coord[VAR_T], tex->wrap_s, tex->wrap_t, color);
 }
 
-static void texture2D_grad_mag_nearest_min_nearest(struct texture *tex, float *coord, float *ddx, float *ddy, float *color){
-    struct mipmap *mip = tex->mipmaps[0];
+static void texture2D_grad_mag_nearest_min_nearest(er_Texture *tex, float *coord, float *ddx, float *ddy, float *color){
+    Mipmap *mip = tex->mipmaps[0];
     sample_tex2D_nearest(mip->texels, mip->width, mip->height, tex->components, coord[VAR_S], coord[VAR_T], tex->wrap_s, tex->wrap_t, color);
 }
 
-static void texture2D_grad_mag_linear_min_nearest(struct texture *tex, float *coord, float *ddx, float *ddy, float *color){
+static void texture2D_grad_mag_linear_min_nearest(er_Texture *tex, float *coord, float *ddx, float *ddy, float *color){
 
     float lod_level = calculate_texture2D_lod_level(tex, ddx, ddy);
-    struct mipmap *mip = tex->mipmaps[0];
+    Mipmap *mip = tex->mipmaps[0];
     if(lod_level <= 0){
         sample_tex2D_bilinear(mip->texels, mip->width, mip->height, tex->components, coord[VAR_S], coord[VAR_T], tex->wrap_s, tex->wrap_t, color);
     }else{
@@ -846,10 +846,10 @@ static void texture2D_grad_mag_linear_min_nearest(struct texture *tex, float *co
 
 }
 
-static void texture2D_grad_mag_nearest_min_linear(struct texture *tex, float *coord, float *ddx, float *ddy, float *color){
+static void texture2D_grad_mag_nearest_min_linear(er_Texture *tex, float *coord, float *ddx, float *ddy, float *color){
 
     float lod_level = calculate_texture2D_lod_level(tex, ddx, ddy);
-    struct mipmap *mip = tex->mipmaps[0];
+    Mipmap *mip = tex->mipmaps[0];
     if(lod_level <= 0){
         sample_tex2D_nearest(mip->texels, mip->width, mip->height, tex->components, coord[VAR_S], coord[VAR_T], tex->wrap_s, tex->wrap_t, color);
     }else{
@@ -858,11 +858,11 @@ static void texture2D_grad_mag_nearest_min_linear(struct texture *tex, float *co
 
 }
 
-static void texture2D_grad_mag_linear_min_linear_mip_linear(struct texture *tex, float *coord, float *ddx, float *ddy, float *color){
+static void texture2D_grad_mag_linear_min_linear_mip_linear(er_Texture *tex, float *coord, float *ddx, float *ddy, float *color){
 
     float lod_level = calculate_texture2D_lod_level(tex, ddx, ddy);
     if(lod_level <= 0){
-        struct mipmap *mip = tex->mipmaps[0];
+        Mipmap *mip = tex->mipmaps[0];
         sample_tex2D_bilinear(mip->texels, mip->width, mip->height, tex->components, coord[VAR_S], coord[VAR_T], tex->wrap_s, tex->wrap_t, color);
     }else if(lod_level < tex->lod_max_level){
         int lower_level = (int)lod_level;
@@ -870,8 +870,8 @@ static void texture2D_grad_mag_linear_min_linear_mip_linear(struct texture *tex,
         float lod_blend_factor = lod_level - lower_level;
         vec4 lower_color;
         vec4 upper_color;
-        struct mipmap *lower_mip = tex->mipmaps[lower_level];
-        struct mipmap *upper_mip = tex->mipmaps[upper_level];
+        Mipmap *lower_mip = tex->mipmaps[lower_level];
+        Mipmap *upper_mip = tex->mipmaps[upper_level];
         sample_tex2D_bilinear(lower_mip->texels, lower_mip->width, lower_mip->height, tex->components, coord[VAR_S], coord[VAR_T], tex->wrap_s, tex->wrap_t, lower_color);
         sample_tex2D_bilinear(upper_mip->texels, upper_mip->width, upper_mip->height, tex->components, coord[VAR_S], coord[VAR_T], tex->wrap_s, tex->wrap_t, upper_color);
         int c;
@@ -879,17 +879,17 @@ static void texture2D_grad_mag_linear_min_linear_mip_linear(struct texture *tex,
             color[c] = lerp(lower_color[c], upper_color[c], lod_blend_factor);
         }
     }else{
-        struct mipmap *mip = tex->mipmaps[tex->lod_max_level];
+        Mipmap *mip = tex->mipmaps[tex->lod_max_level];
         sample_tex2D_bilinear(mip->texels, mip->width, mip->height, tex->components, coord[VAR_S], coord[VAR_T], tex->wrap_s, tex->wrap_t, color);
     }
 
 }
 
-static void texture2D_grad_mag_linear_min_nearest_mip_linear(struct texture *tex, float *coord, float *ddx, float *ddy, float *color){
+static void texture2D_grad_mag_linear_min_nearest_mip_linear(er_Texture *tex, float *coord, float *ddx, float *ddy, float *color){
 
     float lod_level = calculate_texture2D_lod_level(tex, ddx, ddy);
     if(lod_level <= 0){
-        struct mipmap *mip = tex->mipmaps[0];
+        Mipmap *mip = tex->mipmaps[0];
         sample_tex2D_bilinear(mip->texels, mip->width, mip->height, tex->components, coord[VAR_S], coord[VAR_T], tex->wrap_s, tex->wrap_t, color);
     }else if(lod_level < tex->lod_max_level){
         int lower_level = (int)lod_level;
@@ -897,8 +897,8 @@ static void texture2D_grad_mag_linear_min_nearest_mip_linear(struct texture *tex
         float lod_blend_factor = lod_level - lower_level;
         vec4 lower_color;
         vec4 upper_color;
-        struct mipmap *lower_mip = tex->mipmaps[lower_level];
-        struct mipmap *upper_mip = tex->mipmaps[upper_level];
+        Mipmap *lower_mip = tex->mipmaps[lower_level];
+        Mipmap *upper_mip = tex->mipmaps[upper_level];
         sample_tex2D_nearest(lower_mip->texels, lower_mip->width, lower_mip->height, tex->components, coord[VAR_S], coord[VAR_T], tex->wrap_s, tex->wrap_t, lower_color);
         sample_tex2D_nearest(upper_mip->texels, upper_mip->width, upper_mip->height, tex->components, coord[VAR_S], coord[VAR_T], tex->wrap_s, tex->wrap_t, upper_color);
         int c;
@@ -906,51 +906,51 @@ static void texture2D_grad_mag_linear_min_nearest_mip_linear(struct texture *tex
             color[c] = lerp(lower_color[c], upper_color[c], lod_blend_factor);
         }
     }else{
-        struct mipmap *mip = tex->mipmaps[tex->lod_max_level];
+        Mipmap *mip = tex->mipmaps[tex->lod_max_level];
         sample_tex2D_nearest(mip->texels, mip->width, mip->height, tex->components, coord[VAR_S], coord[VAR_T], tex->wrap_s, tex->wrap_t, color);
     }
 
 }
 
-static void texture2D_grad_mag_linear_min_linear_mip_nearest(struct texture *tex, float *coord, float *ddx, float *ddy, float *color){
+static void texture2D_grad_mag_linear_min_linear_mip_nearest(er_Texture *tex, float *coord, float *ddx, float *ddy, float *color){
 
     float lod_level = calculate_texture2D_lod_level(tex, ddx, ddy);
     if(lod_level <= 0){
-        struct mipmap *mip = tex->mipmaps[0];
+        Mipmap *mip = tex->mipmaps[0];
         sample_tex2D_bilinear(mip->texels, mip->width, mip->height, tex->components, coord[VAR_S], coord[VAR_T], tex->wrap_s, tex->wrap_t, color);
     }else if(lod_level < tex->lod_max_level){
         int round_level = uiround(lod_level);
-        struct mipmap *mip = tex->mipmaps[round_level];
+        Mipmap *mip = tex->mipmaps[round_level];
         sample_tex2D_bilinear(mip->texels, mip->width, mip->height, tex->components, coord[VAR_S], coord[VAR_T], tex->wrap_s, tex->wrap_t, color);
     }else{
-        struct mipmap *mip = tex->mipmaps[tex->lod_max_level];
+        Mipmap *mip = tex->mipmaps[tex->lod_max_level];
         sample_tex2D_bilinear(mip->texels, mip->width, mip->height, tex->components, coord[VAR_S], coord[VAR_T], tex->wrap_s, tex->wrap_t, color);
     }
 
 }
 
-static void texture2D_grad_mag_linear_min_nearest_mip_nearest(struct texture *tex, float *coord, float *ddx, float *ddy, float *color){
+static void texture2D_grad_mag_linear_min_nearest_mip_nearest(er_Texture *tex, float *coord, float *ddx, float *ddy, float *color){
 
     float lod_level = calculate_texture2D_lod_level(tex, ddx, ddy);
     if(lod_level <= 0){
-        struct mipmap *mip = tex->mipmaps[0];
+        Mipmap *mip = tex->mipmaps[0];
         sample_tex2D_bilinear(mip->texels, mip->width, mip->height, tex->components, coord[VAR_S], coord[VAR_T], tex->wrap_s, tex->wrap_t, color);
     }else if(lod_level < tex->lod_max_level){
         int round_level = uiround(lod_level);
-        struct mipmap *mip = tex->mipmaps[round_level];
+        Mipmap *mip = tex->mipmaps[round_level];
         sample_tex2D_nearest(mip->texels, mip->width, mip->height, tex->components, coord[VAR_S], coord[VAR_T], tex->wrap_s, tex->wrap_t, color);
     }else{
-        struct mipmap *mip = tex->mipmaps[tex->lod_max_level];
+        Mipmap *mip = tex->mipmaps[tex->lod_max_level];
         sample_tex2D_nearest(mip->texels, mip->width, mip->height, tex->components, coord[VAR_S], coord[VAR_T], tex->wrap_s, tex->wrap_t, color);
     }
 
 }
 
-static void texture2D_grad_mag_nearest_min_linear_mip_linear(struct texture *tex, float *coord, float *ddx, float *ddy, float *color){
+static void texture2D_grad_mag_nearest_min_linear_mip_linear(er_Texture *tex, float *coord, float *ddx, float *ddy, float *color){
 
     float lod_level = calculate_texture2D_lod_level(tex, ddx, ddy);
     if(lod_level <= 0){
-        struct mipmap *mip = tex->mipmaps[0];
+        Mipmap *mip = tex->mipmaps[0];
         sample_tex2D_nearest(mip->texels, mip->width, mip->height, tex->components, coord[VAR_S], coord[VAR_T], tex->wrap_s, tex->wrap_t, color);
     }else if(lod_level < tex->lod_max_level){
         int lower_level = (int)lod_level;
@@ -958,8 +958,8 @@ static void texture2D_grad_mag_nearest_min_linear_mip_linear(struct texture *tex
         float lod_blend_factor = lod_level - lower_level;
         vec4 lower_color;
         vec4 upper_color;
-        struct mipmap *lower_mip = tex->mipmaps[lower_level];
-        struct mipmap *upper_mip = tex->mipmaps[upper_level];
+        Mipmap *lower_mip = tex->mipmaps[lower_level];
+        Mipmap *upper_mip = tex->mipmaps[upper_level];
         sample_tex2D_bilinear(lower_mip->texels, lower_mip->width, lower_mip->height, tex->components, coord[VAR_S], coord[VAR_T], tex->wrap_s, tex->wrap_t, lower_color);
         sample_tex2D_bilinear(upper_mip->texels, upper_mip->width, upper_mip->height, tex->components, coord[VAR_S], coord[VAR_T], tex->wrap_s, tex->wrap_t, upper_color);
         int c;
@@ -967,17 +967,17 @@ static void texture2D_grad_mag_nearest_min_linear_mip_linear(struct texture *tex
             color[c] = lerp(lower_color[c], upper_color[c], lod_blend_factor);
         }
     }else{
-        struct mipmap *mip = tex->mipmaps[tex->lod_max_level];
+        Mipmap *mip = tex->mipmaps[tex->lod_max_level];
         sample_tex2D_bilinear(mip->texels, mip->width, mip->height, tex->components, coord[VAR_S], coord[VAR_T], tex->wrap_s, tex->wrap_t, color);
     }
 
 }
 
-static void texture2D_grad_mag_nearest_min_nearest_mip_linear(struct texture *tex, float *coord, float *ddx, float *ddy, float *color){
+static void texture2D_grad_mag_nearest_min_nearest_mip_linear(er_Texture *tex, float *coord, float *ddx, float *ddy, float *color){
 
     float lod_level = calculate_texture2D_lod_level(tex, ddx, ddy);
     if(lod_level <= 0){
-        struct mipmap *mip = tex->mipmaps[0];
+        Mipmap *mip = tex->mipmaps[0];
         sample_tex2D_nearest(mip->texels, mip->width, mip->height, tex->components, coord[VAR_S], coord[VAR_T], tex->wrap_s, tex->wrap_t, color);
     }else if(lod_level < tex->lod_max_level){
         int lower_level = (int)lod_level;
@@ -985,8 +985,8 @@ static void texture2D_grad_mag_nearest_min_nearest_mip_linear(struct texture *te
         float lod_blend_factor = lod_level - lower_level;
         vec4 lower_color;
         vec4 upper_color;
-        struct mipmap *lower_mip = tex->mipmaps[lower_level];
-        struct mipmap *upper_mip = tex->mipmaps[upper_level];
+        Mipmap *lower_mip = tex->mipmaps[lower_level];
+        Mipmap *upper_mip = tex->mipmaps[upper_level];
         sample_tex2D_nearest(lower_mip->texels, lower_mip->width, lower_mip->height, tex->components, coord[VAR_S], coord[VAR_T], tex->wrap_s, tex->wrap_t, lower_color);
         sample_tex2D_nearest(upper_mip->texels, upper_mip->width, upper_mip->height, tex->components, coord[VAR_S], coord[VAR_T], tex->wrap_s, tex->wrap_t, upper_color);
         int c;
@@ -994,54 +994,54 @@ static void texture2D_grad_mag_nearest_min_nearest_mip_linear(struct texture *te
             color[c] = lerp(lower_color[c], upper_color[c], lod_blend_factor);
         }
     }else{
-        struct mipmap *mip = tex->mipmaps[tex->lod_max_level];
+        Mipmap *mip = tex->mipmaps[tex->lod_max_level];
         sample_tex2D_nearest(mip->texels, mip->width, mip->height, tex->components, coord[VAR_S], coord[VAR_T], tex->wrap_s, tex->wrap_t, color);
     }
 
 }
 
-static void texture2D_grad_mag_nearest_min_linear_mip_nearest(struct texture *tex, float *coord, float *ddx, float *ddy, float *color){
+static void texture2D_grad_mag_nearest_min_linear_mip_nearest(er_Texture *tex, float *coord, float *ddx, float *ddy, float *color){
 
     float lod_level = calculate_texture2D_lod_level(tex, ddx, ddy);
     if(lod_level <= 0){
-        struct mipmap *mip = tex->mipmaps[0];
+        Mipmap *mip = tex->mipmaps[0];
         sample_tex2D_nearest(mip->texels, mip->width, mip->height, tex->components, coord[VAR_S], coord[VAR_T], tex->wrap_s, tex->wrap_t, color);
     }else if(lod_level < tex->lod_max_level){
         int round_level = uiround(lod_level);
-        struct mipmap *mip = tex->mipmaps[round_level];
+        Mipmap *mip = tex->mipmaps[round_level];
         sample_tex2D_bilinear(mip->texels, mip->width, mip->height, tex->components, coord[VAR_S], coord[VAR_T], tex->wrap_s, tex->wrap_t, color);
     }else{
-        struct mipmap *mip = tex->mipmaps[tex->lod_max_level];
+        Mipmap *mip = tex->mipmaps[tex->lod_max_level];
         sample_tex2D_bilinear(mip->texels, mip->width, mip->height, tex->components, coord[VAR_S], coord[VAR_T], tex->wrap_s, tex->wrap_t, color);
     }
 
 }
 
-static void texture2D_grad_mag_nearest_min_nearest_mip_nearest(struct texture *tex, float *coord, float *ddx, float *ddy, float *color){
+static void texture2D_grad_mag_nearest_min_nearest_mip_nearest(er_Texture *tex, float *coord, float *ddx, float *ddy, float *color){
 
     float lod_level = calculate_texture2D_lod_level(tex, ddx, ddy);
     if(lod_level <= 0){
-        struct mipmap *mip = tex->mipmaps[0];
+        Mipmap *mip = tex->mipmaps[0];
         sample_tex2D_nearest(mip->texels, mip->width, mip->height, tex->components, coord[VAR_S], coord[VAR_T], tex->wrap_s, tex->wrap_t, color);
     }else if(lod_level < tex->lod_max_level){
         int round_level = uiround(lod_level);
-        struct mipmap *mip = tex->mipmaps[round_level];
+        Mipmap *mip = tex->mipmaps[round_level];
         sample_tex2D_nearest(mip->texels, mip->width, mip->height, tex->components, coord[VAR_S], coord[VAR_T], tex->wrap_s, tex->wrap_t, color);
     }else{
-        struct mipmap *mip = tex->mipmaps[tex->lod_max_level];
+        Mipmap *mip = tex->mipmaps[tex->lod_max_level];
         sample_tex2D_nearest(mip->texels, mip->width, mip->height, tex->components, coord[VAR_S], coord[VAR_T], tex->wrap_s, tex->wrap_t, color);
     }
 
 }
 
-static void texture_cubemap_size(struct texture *tex, int lod, int *dimension){
+static void texture_cubemap_size(er_Texture *tex, int lod, int *dimension){
 
     dimension[0] = tex->mipmaps[lod]->width;
     dimension[1] = tex->mipmaps[lod]->height;
 
 }
 
-static void texture_cubemap_texel_fetch(struct texture *tex, int *coord, int lod, float *color){
+static void texture_cubemap_texel_fetch(er_Texture *tex, int *coord, int lod, float *color){
 
     float *texels;
     int cubemap_face = coord[2];
@@ -1057,7 +1057,7 @@ static void texture_cubemap_texel_fetch(struct texture *tex, int *coord, int lod
 
 }
 
-static void write_texture_cubemap(struct texture *tex, int *coord, int lod, float *color){
+static void write_texture_cubemap(er_Texture *tex, int *coord, int lod, float *color){
 
     float *texels;
     int cubemap_face = coord[2];
@@ -1073,7 +1073,7 @@ static void write_texture_cubemap(struct texture *tex, int *coord, int lod, floa
 
 }
 
-static void calculate_cubemap_uv(struct texture *tex, float* input_vector, struct cubemap_uv* output){
+static void calculate_cubemap_uv(er_Texture *tex, float* input_vector, Cubemap_uv* output){
 
     float abs_x, abs_y, abs_z;
     int x_index, y_index, z_index;
@@ -1154,7 +1154,7 @@ static void calculate_cubemap_uv(struct texture *tex, float* input_vector, struc
     output->v = 0.5f * output->v_sign * input_vector[output->v_index] / max_axis + 0.5f;
 }
 
-static float calculate_cubemap_lod_level(struct texture *tex, float* input_vector, float *ddx, float *ddy, struct cubemap_uv* output_uv){
+static float calculate_cubemap_lod_level(er_Texture *tex, float* input_vector, float *ddx, float *ddy, Cubemap_uv* output_uv){
 
     float du_dx, dv_dx, du_dy, dv_dy;
     int ui = output_uv->u_index;
@@ -1174,9 +1174,9 @@ static float calculate_cubemap_lod_level(struct texture *tex, float* input_vecto
     return lod_level;
 }
 
-static void texture_cubemap_lod_mag_linear_min_linear(struct texture *tex, float *coord, float lod_level, float *color){
+static void texture_cubemap_lod_mag_linear_min_linear(er_Texture *tex, float *coord, float lod_level, float *color){
 
-    struct cubemap_uv output;
+    Cubemap_uv output;
     calculate_cubemap_uv(tex, coord, &output);
     int w = tex->mipmaps[0]->width;
     int h = tex->mipmaps[0]->height;
@@ -1185,9 +1185,9 @@ static void texture_cubemap_lod_mag_linear_min_linear(struct texture *tex, float
 
 }
 
-static void texture_cubemap_lod_mag_nearest_min_nearest(struct texture *tex, float *coord, float lod_level, float *color){
+static void texture_cubemap_lod_mag_nearest_min_nearest(er_Texture *tex, float *coord, float lod_level, float *color){
 
-    struct cubemap_uv output;
+    Cubemap_uv output;
     calculate_cubemap_uv(tex, coord, &output);
     int w = tex->mipmaps[0]->width;
     int h = tex->mipmaps[0]->height;
@@ -1196,11 +1196,11 @@ static void texture_cubemap_lod_mag_nearest_min_nearest(struct texture *tex, flo
 
 }
 
-static void texture_cubemap_lod_mag_linear_min_nearest(struct texture *tex, float *coord, float lod_level, float *color){
+static void texture_cubemap_lod_mag_linear_min_nearest(er_Texture *tex, float *coord, float lod_level, float *color){
 
-    struct cubemap_uv output;
+    Cubemap_uv output;
     calculate_cubemap_uv(tex, coord, &output);
-    struct mipmap *mip = tex->mipmaps[0];
+    Mipmap *mip = tex->mipmaps[0];
     float *texels = mip->texels + output.cubemap_face * mip->width * mip->height * tex->components;
     if(lod_level == 0){
         sample_tex2D_bilinear(texels, mip->width, mip->height, tex->components, output.u, output.v, output.wrap_u, output.wrap_v, color);
@@ -1210,11 +1210,11 @@ static void texture_cubemap_lod_mag_linear_min_nearest(struct texture *tex, floa
 
 }
 
-static void texture_cubemap_lod_mag_nearest_min_linear(struct texture *tex, float *coord, float lod_level, float *color){
+static void texture_cubemap_lod_mag_nearest_min_linear(er_Texture *tex, float *coord, float lod_level, float *color){
 
-    struct cubemap_uv output;
+    Cubemap_uv output;
     calculate_cubemap_uv(tex, coord, &output);
-    struct mipmap *mip = tex->mipmaps[0];
+    Mipmap *mip = tex->mipmaps[0];
     float *texels = mip->texels + output.cubemap_face * mip->width * mip->height * tex->components;
     if(lod_level == 0){
         sample_tex2D_nearest(texels, mip->width, mip->height, tex->components, output.u, output.v, output.wrap_u, output.wrap_v, color);
@@ -1224,12 +1224,12 @@ static void texture_cubemap_lod_mag_nearest_min_linear(struct texture *tex, floa
 
 }
 
-static void texture_cubemap_lod_mag_linear_min_linear_mip_linear(struct texture *tex, float *coord, float lod_level, float *color){
+static void texture_cubemap_lod_mag_linear_min_linear_mip_linear(er_Texture *tex, float *coord, float lod_level, float *color){
 
-    struct cubemap_uv output;
+    Cubemap_uv output;
     calculate_cubemap_uv(tex, coord, &output);
     if(lod_level <= 0){
-        struct mipmap *mip = tex->mipmaps[0];
+        Mipmap *mip = tex->mipmaps[0];
         float *texels = mip->texels + output.cubemap_face * mip->width * mip->height * tex->components;
         sample_tex2D_bilinear(texels, mip->width, mip->height, tex->components, output.u, output.v, output.wrap_u, output.wrap_v, color);
     }else if(lod_level < tex->lod_max_level){
@@ -1238,8 +1238,8 @@ static void texture_cubemap_lod_mag_linear_min_linear_mip_linear(struct texture 
         float lod_blend_factor = lod_level - lower_level;
         vec4 lower_color;
         vec4 upper_color;
-        struct mipmap *lower_mip = tex->mipmaps[lower_level];
-        struct mipmap *upper_mip = tex->mipmaps[upper_level];
+        Mipmap *lower_mip = tex->mipmaps[lower_level];
+        Mipmap *upper_mip = tex->mipmaps[upper_level];
         float *lower_texels = lower_mip->texels + output.cubemap_face * lower_mip->width * lower_mip->height * tex->components;
         float *upper_texels = upper_mip->texels + output.cubemap_face * upper_mip->width * upper_mip->height * tex->components;
         sample_tex2D_bilinear(lower_texels, lower_mip->width, lower_mip->height, tex->components, output.u, output.v, output.wrap_u, output.wrap_v, lower_color);
@@ -1249,19 +1249,19 @@ static void texture_cubemap_lod_mag_linear_min_linear_mip_linear(struct texture 
             color[c] = lerp(lower_color[c], upper_color[c], lod_blend_factor);
         }
     }else{
-        struct mipmap *mip = tex->mipmaps[tex->lod_max_level];
+        Mipmap *mip = tex->mipmaps[tex->lod_max_level];
         float *texels = mip->texels + output.cubemap_face * mip->width * mip->height * tex->components;
         sample_tex2D_bilinear(texels, mip->width, mip->height, tex->components, output.u, output.v, output.wrap_u, output.wrap_v, color);
     }
 
 }
 
-static void texture_cubemap_lod_mag_linear_min_nearest_mip_linear(struct texture *tex, float *coord, float lod_level, float *color){
+static void texture_cubemap_lod_mag_linear_min_nearest_mip_linear(er_Texture *tex, float *coord, float lod_level, float *color){
 
-    struct cubemap_uv output;
+    Cubemap_uv output;
     calculate_cubemap_uv(tex, coord, &output);
     if(lod_level <= 0){
-        struct mipmap *mip = tex->mipmaps[0];
+        Mipmap *mip = tex->mipmaps[0];
         float *texels = mip->texels + output.cubemap_face * mip->width * mip->height * tex->components;
         sample_tex2D_bilinear(texels, mip->width, mip->height, tex->components, output.u, output.v, output.wrap_u, output.wrap_v, color);
     }else if(lod_level < tex->lod_max_level){
@@ -1270,8 +1270,8 @@ static void texture_cubemap_lod_mag_linear_min_nearest_mip_linear(struct texture
         float lod_blend_factor = lod_level - lower_level;
         vec4 lower_color;
         vec4 upper_color;
-        struct mipmap *lower_mip = tex->mipmaps[lower_level];
-        struct mipmap *upper_mip = tex->mipmaps[upper_level];
+        Mipmap *lower_mip = tex->mipmaps[lower_level];
+        Mipmap *upper_mip = tex->mipmaps[upper_level];
         float *lower_texels = lower_mip->texels + output.cubemap_face * lower_mip->width * lower_mip->height * tex->components;
         float *upper_texels = upper_mip->texels + output.cubemap_face * upper_mip->width * upper_mip->height * tex->components;
         sample_tex2D_nearest(lower_texels, lower_mip->width, lower_mip->height, tex->components, output.u, output.v, output.wrap_u, output.wrap_v, lower_color);
@@ -1281,61 +1281,61 @@ static void texture_cubemap_lod_mag_linear_min_nearest_mip_linear(struct texture
           color[c] = lerp(lower_color[c], upper_color[c], lod_blend_factor);
         }
     }else{
-        struct mipmap *mip = tex->mipmaps[tex->lod_max_level];
+        Mipmap *mip = tex->mipmaps[tex->lod_max_level];
         float *texels = mip->texels + output.cubemap_face * mip->width * mip->height * tex->components;
         sample_tex2D_nearest(texels, mip->width, mip->height, tex->components, output.u, output.v, output.wrap_u, output.wrap_v, color);
     }
 
 }
 
-static void texture_cubemap_lod_mag_linear_min_linear_mip_nearest(struct texture *tex, float *coord, float lod_level, float *color){
+static void texture_cubemap_lod_mag_linear_min_linear_mip_nearest(er_Texture *tex, float *coord, float lod_level, float *color){
 
-    struct cubemap_uv output;
+    Cubemap_uv output;
     calculate_cubemap_uv(tex, coord, &output);
     if(lod_level <= 0){
-        struct mipmap *mip = tex->mipmaps[0];
+        Mipmap *mip = tex->mipmaps[0];
         float *texels = mip->texels + output.cubemap_face * mip->width * mip->height * tex->components;
         sample_tex2D_bilinear(texels, mip->width, mip->height, tex->components, output.u, output.v, output.wrap_u, output.wrap_v, color);
     }else if(lod_level < tex->lod_max_level){
         int round_level = uiround(lod_level);
-        struct mipmap *mip = tex->mipmaps[round_level];
+        Mipmap *mip = tex->mipmaps[round_level];
         float *texels = mip->texels + output.cubemap_face * mip->width * mip->height * tex->components;
         sample_tex2D_bilinear(texels, mip->width, mip->height, tex->components, output.u, output.v, output.wrap_u, output.wrap_v, color);
     }else{
-        struct mipmap *mip = tex->mipmaps[tex->lod_max_level];
+        Mipmap *mip = tex->mipmaps[tex->lod_max_level];
         float *texels = mip->texels + output.cubemap_face * mip->width * mip->height * tex->components;
         sample_tex2D_bilinear(texels, mip->width, mip->height, tex->components, output.u, output.v, output.wrap_u, output.wrap_v, color);
     }
 
 }
 
-static void texture_cubemap_lod_mag_linear_min_nearest_mip_nearest(struct texture *tex, float *coord, float lod_level, float *color){
+static void texture_cubemap_lod_mag_linear_min_nearest_mip_nearest(er_Texture *tex, float *coord, float lod_level, float *color){
 
-    struct cubemap_uv output;
+    Cubemap_uv output;
     calculate_cubemap_uv(tex, coord, &output);
     if(lod_level <= 0){
-        struct mipmap *mip = tex->mipmaps[0];
+        Mipmap *mip = tex->mipmaps[0];
         float *texels = mip->texels + output.cubemap_face * mip->width * mip->height * tex->components;
         sample_tex2D_bilinear(texels, mip->width, mip->height, tex->components, output.u, output.v, output.wrap_u, output.wrap_v, color);
     }else if(lod_level < tex->lod_max_level){
         int round_level = uiround(lod_level);
-        struct mipmap *mip = tex->mipmaps[round_level];
+        Mipmap *mip = tex->mipmaps[round_level];
         float *texels = mip->texels + output.cubemap_face * mip->width * mip->height * tex->components;
         sample_tex2D_nearest(texels, mip->width, mip->height, tex->components, output.u, output.v, output.wrap_u, output.wrap_v, color);
     }else{
-        struct mipmap *mip = tex->mipmaps[tex->lod_max_level];
+        Mipmap *mip = tex->mipmaps[tex->lod_max_level];
         float *texels = mip->texels + output.cubemap_face * mip->width * mip->height * tex->components;
         sample_tex2D_nearest(texels, mip->width, mip->height, tex->components, output.u, output.v, output.wrap_u, output.wrap_v, color);
     }
 
 }
 
-static void texture_cubemap_lod_mag_nearest_min_linear_mip_linear(struct texture *tex, float *coord, float lod_level, float *color){
+static void texture_cubemap_lod_mag_nearest_min_linear_mip_linear(er_Texture *tex, float *coord, float lod_level, float *color){
 
-    struct cubemap_uv output;
+    Cubemap_uv output;
     calculate_cubemap_uv(tex, coord, &output);
     if(lod_level <= 0){
-        struct mipmap *mip = tex->mipmaps[0];
+        Mipmap *mip = tex->mipmaps[0];
         float *texels = mip->texels + output.cubemap_face * mip->width * mip->height * tex->components;
         sample_tex2D_nearest(texels, mip->width, mip->height, tex->components, output.u, output.v, output.wrap_u, output.wrap_v, color);
     }else if(lod_level < tex->lod_max_level){
@@ -1344,8 +1344,8 @@ static void texture_cubemap_lod_mag_nearest_min_linear_mip_linear(struct texture
         float lod_blend_factor = lod_level - lower_level;
         vec4 lower_color;
         vec4 upper_color;
-        struct mipmap *lower_mip = tex->mipmaps[lower_level];
-        struct mipmap *upper_mip = tex->mipmaps[upper_level];
+        Mipmap *lower_mip = tex->mipmaps[lower_level];
+        Mipmap *upper_mip = tex->mipmaps[upper_level];
         float *lower_texels = lower_mip->texels + output.cubemap_face * lower_mip->width * lower_mip->height * tex->components;
         float *upper_texels = upper_mip->texels + output.cubemap_face * upper_mip->width * upper_mip->height * tex->components;
         sample_tex2D_bilinear(lower_texels, lower_mip->width, lower_mip->height, tex->components, output.u, output.v, output.wrap_u, output.wrap_v, lower_color);
@@ -1355,19 +1355,19 @@ static void texture_cubemap_lod_mag_nearest_min_linear_mip_linear(struct texture
             color[c] = lerp(lower_color[c], upper_color[c], lod_blend_factor);
         }
     }else{
-        struct mipmap *mip = tex->mipmaps[tex->lod_max_level];
+        Mipmap *mip = tex->mipmaps[tex->lod_max_level];
         float *texels = mip->texels + output.cubemap_face * mip->width * mip->height * tex->components;
         sample_tex2D_bilinear(texels, mip->width, mip->height, tex->components, output.u, output.v, output.wrap_u, output.wrap_v, color);
     }
 
 }
 
-static void texture_cubemap_lod_mag_nearest_min_nearest_mip_linear(struct texture *tex, float *coord, float lod_level, float *color){
+static void texture_cubemap_lod_mag_nearest_min_nearest_mip_linear(er_Texture *tex, float *coord, float lod_level, float *color){
 
-    struct cubemap_uv output;
+    Cubemap_uv output;
     calculate_cubemap_uv(tex, coord, &output);
     if(lod_level <= 0){
-        struct mipmap *mip = tex->mipmaps[0];
+        Mipmap *mip = tex->mipmaps[0];
         float *texels = mip->texels + output.cubemap_face * mip->width * mip->height * tex->components;
         sample_tex2D_nearest(texels, mip->width, mip->height, tex->components, output.u, output.v, output.wrap_u, output.wrap_v, color);
     }else if(lod_level < tex->lod_max_level){
@@ -1376,8 +1376,8 @@ static void texture_cubemap_lod_mag_nearest_min_nearest_mip_linear(struct textur
         float lod_blend_factor = lod_level - lower_level;
         vec4 lower_color;
         vec4 upper_color;
-        struct mipmap *lower_mip = tex->mipmaps[lower_level];
-        struct mipmap *upper_mip = tex->mipmaps[upper_level];
+        Mipmap *lower_mip = tex->mipmaps[lower_level];
+        Mipmap *upper_mip = tex->mipmaps[upper_level];
         float *lower_texels = lower_mip->texels + output.cubemap_face * lower_mip->width * lower_mip->height * tex->components;
         float *upper_texels = upper_mip->texels + output.cubemap_face * upper_mip->width * upper_mip->height * tex->components;
         sample_tex2D_nearest(lower_texels, lower_mip->width, lower_mip->height, tex->components, output.u, output.v, output.wrap_u, output.wrap_v, lower_color);
@@ -1387,58 +1387,58 @@ static void texture_cubemap_lod_mag_nearest_min_nearest_mip_linear(struct textur
             color[c] = lerp(lower_color[c], upper_color[c], lod_blend_factor);
         }
     }else{
-        struct mipmap *mip = tex->mipmaps[tex->lod_max_level];
+        Mipmap *mip = tex->mipmaps[tex->lod_max_level];
         float *texels = mip->texels + output.cubemap_face * mip->width * mip->height * tex->components;
         sample_tex2D_nearest(texels, mip->width, mip->height, tex->components, output.u, output.v, output.wrap_u, output.wrap_v, color);
     }
 
 }
 
-static void texture_cubemap_lod_mag_nearest_min_linear_mip_nearest(struct texture *tex, float *coord, float lod_level, float *color){
+static void texture_cubemap_lod_mag_nearest_min_linear_mip_nearest(er_Texture *tex, float *coord, float lod_level, float *color){
 
-    struct cubemap_uv output;
+    Cubemap_uv output;
     calculate_cubemap_uv(tex, coord, &output);
     if(lod_level <= 0){
-        struct mipmap *mip = tex->mipmaps[0];
+        Mipmap *mip = tex->mipmaps[0];
         float *texels = mip->texels + output.cubemap_face * mip->width * mip->height * tex->components;
         sample_tex2D_nearest(texels, mip->width, mip->height, tex->components, output.u, output.v, output.wrap_u, output.wrap_v, color);
     }else if(lod_level < tex->lod_max_level){
         int round_level = uiround(lod_level);
-        struct mipmap *mip = tex->mipmaps[round_level];
+        Mipmap *mip = tex->mipmaps[round_level];
         float *texels = mip->texels + output.cubemap_face * mip->width * mip->height * tex->components;
         sample_tex2D_bilinear(texels, mip->width, mip->height, tex->components, output.u, output.v, output.wrap_u, output.wrap_v, color);
     }else{
-        struct mipmap *mip = tex->mipmaps[tex->lod_max_level];
+        Mipmap *mip = tex->mipmaps[tex->lod_max_level];
         float *texels = mip->texels + output.cubemap_face * mip->width * mip->height * tex->components;
         sample_tex2D_bilinear(texels, mip->width, mip->height, tex->components, output.u, output.v, output.wrap_u, output.wrap_v, color);
     }
 
 }
 
-static void texture_cubemap_lod_mag_nearest_min_nearest_mip_nearest(struct texture *tex, float *coord, float lod_level, float *color){
+static void texture_cubemap_lod_mag_nearest_min_nearest_mip_nearest(er_Texture *tex, float *coord, float lod_level, float *color){
 
-    struct cubemap_uv output;
+    Cubemap_uv output;
     calculate_cubemap_uv(tex, coord, &output);
     if(lod_level <= 0){
-        struct mipmap *mip = tex->mipmaps[0];
+        Mipmap *mip = tex->mipmaps[0];
         float *texels = mip->texels + output.cubemap_face * mip->width * mip->height * tex->components;
         sample_tex2D_nearest(texels, mip->width, mip->height, tex->components, output.u, output.v, output.wrap_u, output.wrap_v, color);
     }else if(lod_level < tex->lod_max_level){
         int round_level = uiround(lod_level);
-        struct mipmap *mip = tex->mipmaps[round_level];
+        Mipmap *mip = tex->mipmaps[round_level];
         float *texels = mip->texels + output.cubemap_face * mip->width * mip->height * tex->components;
         sample_tex2D_nearest(texels, mip->width, mip->height, tex->components, output.u, output.v, output.wrap_u, output.wrap_v, color);
     }else{
-        struct mipmap *mip = tex->mipmaps[tex->lod_max_level];
+        Mipmap *mip = tex->mipmaps[tex->lod_max_level];
         float *texels = mip->texels + output.cubemap_face * mip->width * mip->height * tex->components;
         sample_tex2D_nearest(texels, mip->width, mip->height, tex->components, output.u, output.v, output.wrap_u, output.wrap_v, color);
     }
 
 }
 
-static void texture_cubemap_grad_mag_linear_min_linear(struct texture *tex, float *coord, float *ddx, float *ddy, float *color){
+static void texture_cubemap_grad_mag_linear_min_linear(er_Texture *tex, float *coord, float *ddx, float *ddy, float *color){
 
-    struct cubemap_uv output;
+    Cubemap_uv output;
     calculate_cubemap_uv(tex, coord, &output);
     int w = tex->mipmaps[0]->width;
     int h = tex->mipmaps[0]->height;
@@ -1447,9 +1447,9 @@ static void texture_cubemap_grad_mag_linear_min_linear(struct texture *tex, floa
 
 }
 
-static void texture_cubemap_grad_mag_nearest_min_nearest(struct texture *tex, float *coord, float *ddx, float *ddy, float *color){
+static void texture_cubemap_grad_mag_nearest_min_nearest(er_Texture *tex, float *coord, float *ddx, float *ddy, float *color){
 
-    struct cubemap_uv output;
+    Cubemap_uv output;
     calculate_cubemap_uv(tex, coord, &output);
     int w = tex->mipmaps[0]->width;
     int h = tex->mipmaps[0]->height;
@@ -1458,12 +1458,12 @@ static void texture_cubemap_grad_mag_nearest_min_nearest(struct texture *tex, fl
 
 }
 
-static void texture_cubemap_grad_mag_linear_min_nearest(struct texture *tex, float *coord, float *ddx, float *ddy, float *color){
+static void texture_cubemap_grad_mag_linear_min_nearest(er_Texture *tex, float *coord, float *ddx, float *ddy, float *color){
 
-    struct cubemap_uv output;
+    Cubemap_uv output;
     calculate_cubemap_uv(tex, coord, &output);
     float lod_level = calculate_cubemap_lod_level(tex, coord, ddx, ddy, &output);
-    struct mipmap *mip = tex->mipmaps[0];
+    Mipmap *mip = tex->mipmaps[0];
     float *texels = mip->texels + output.cubemap_face * mip->width * mip->height * tex->components;
     if(lod_level == 0){
         sample_tex2D_bilinear(texels, mip->width, mip->height, tex->components, output.u, output.v, output.wrap_u, output.wrap_v, color);
@@ -1473,12 +1473,12 @@ static void texture_cubemap_grad_mag_linear_min_nearest(struct texture *tex, flo
 
 }
 
-static void texture_cubemap_grad_mag_nearest_min_linear(struct texture *tex, float *coord, float *ddx, float *ddy, float *color){
+static void texture_cubemap_grad_mag_nearest_min_linear(er_Texture *tex, float *coord, float *ddx, float *ddy, float *color){
 
-    struct cubemap_uv output;
+    Cubemap_uv output;
     calculate_cubemap_uv(tex, coord, &output);
     float lod_level = calculate_cubemap_lod_level(tex, coord, ddx, ddy, &output);
-    struct mipmap *mip = tex->mipmaps[0];
+    Mipmap *mip = tex->mipmaps[0];
     float *texels = mip->texels + output.cubemap_face * mip->width * mip->height * tex->components;
     if(lod_level == 0){
         sample_tex2D_nearest(texels, mip->width, mip->height, tex->components, output.u, output.v, output.wrap_u, output.wrap_v, color);
@@ -1488,13 +1488,13 @@ static void texture_cubemap_grad_mag_nearest_min_linear(struct texture *tex, flo
 
 }
 
-static void texture_cubemap_grad_mag_linear_min_linear_mip_linear(struct texture *tex, float *coord, float *ddx, float *ddy, float *color){
+static void texture_cubemap_grad_mag_linear_min_linear_mip_linear(er_Texture *tex, float *coord, float *ddx, float *ddy, float *color){
 
-    struct cubemap_uv output;
+    Cubemap_uv output;
     calculate_cubemap_uv(tex, coord, &output);
     float lod_level = calculate_cubemap_lod_level(tex, coord, ddx, ddy, &output);
     if(lod_level <= 0){
-        struct mipmap *mip = tex->mipmaps[0];
+        Mipmap *mip = tex->mipmaps[0];
         float *texels = mip->texels + output.cubemap_face * mip->width * mip->height * tex->components;
         sample_tex2D_bilinear(texels, mip->width, mip->height, tex->components, output.u, output.v, output.wrap_u, output.wrap_v, color);
     }else if(lod_level < tex->lod_max_level){
@@ -1503,8 +1503,8 @@ static void texture_cubemap_grad_mag_linear_min_linear_mip_linear(struct texture
         float lod_blend_factor = lod_level - lower_level;
         vec4 lower_color;
         vec4 upper_color;
-        struct mipmap *lower_mip = tex->mipmaps[lower_level];
-        struct mipmap *upper_mip = tex->mipmaps[upper_level];
+        Mipmap *lower_mip = tex->mipmaps[lower_level];
+        Mipmap *upper_mip = tex->mipmaps[upper_level];
         float *lower_texels = lower_mip->texels + output.cubemap_face * lower_mip->width * lower_mip->height * tex->components;
         float *upper_texels = upper_mip->texels + output.cubemap_face * upper_mip->width * upper_mip->height * tex->components;
         sample_tex2D_bilinear(lower_texels, lower_mip->width, lower_mip->height, tex->components, output.u, output.v, output.wrap_u, output.wrap_v, lower_color);
@@ -1514,20 +1514,20 @@ static void texture_cubemap_grad_mag_linear_min_linear_mip_linear(struct texture
             color[c] = lerp(lower_color[c], upper_color[c], lod_blend_factor);
         }
     }else{
-        struct mipmap *mip = tex->mipmaps[tex->lod_max_level];
+        Mipmap *mip = tex->mipmaps[tex->lod_max_level];
         float *texels = mip->texels + output.cubemap_face * mip->width * mip->height * tex->components;
         sample_tex2D_bilinear(texels, mip->width, mip->height, tex->components, output.u, output.v, output.wrap_u, output.wrap_v, color);
     }
 
 }
 
-static void texture_cubemap_grad_mag_linear_min_nearest_mip_linear(struct texture *tex, float *coord, float *ddx, float *ddy, float *color){
+static void texture_cubemap_grad_mag_linear_min_nearest_mip_linear(er_Texture *tex, float *coord, float *ddx, float *ddy, float *color){
 
-    struct cubemap_uv output;
+    Cubemap_uv output;
     calculate_cubemap_uv(tex, coord, &output);
     float lod_level = calculate_cubemap_lod_level(tex, coord, ddx, ddy, &output);
     if(lod_level <= 0){
-        struct mipmap *mip = tex->mipmaps[0];
+        Mipmap *mip = tex->mipmaps[0];
         float *texels = mip->texels + output.cubemap_face * mip->width * mip->height * tex->components;
         sample_tex2D_bilinear(texels, mip->width, mip->height, tex->components, output.u, output.v, output.wrap_u, output.wrap_v, color);
     }else if(lod_level < tex->lod_max_level){
@@ -1536,8 +1536,8 @@ static void texture_cubemap_grad_mag_linear_min_nearest_mip_linear(struct textur
         float lod_blend_factor = lod_level - lower_level;
         vec4 lower_color;
         vec4 upper_color;
-        struct mipmap *lower_mip = tex->mipmaps[lower_level];
-        struct mipmap *upper_mip = tex->mipmaps[upper_level];
+        Mipmap *lower_mip = tex->mipmaps[lower_level];
+        Mipmap *upper_mip = tex->mipmaps[upper_level];
         float *lower_texels = lower_mip->texels + output.cubemap_face * lower_mip->width * lower_mip->height * tex->components;
         float *upper_texels = upper_mip->texels + output.cubemap_face * upper_mip->width * upper_mip->height * tex->components;
         sample_tex2D_nearest(lower_texels, lower_mip->width, lower_mip->height, tex->components, output.u, output.v, output.wrap_u, output.wrap_v, lower_color);
@@ -1547,64 +1547,64 @@ static void texture_cubemap_grad_mag_linear_min_nearest_mip_linear(struct textur
             color[c] = lerp(lower_color[c], upper_color[c], lod_blend_factor);
         }
     }else{
-        struct mipmap *mip = tex->mipmaps[tex->lod_max_level];
+        Mipmap *mip = tex->mipmaps[tex->lod_max_level];
         float *texels = mip->texels + output.cubemap_face * mip->width * mip->height * tex->components;
         sample_tex2D_nearest(texels, mip->width, mip->height, tex->components, output.u, output.v, output.wrap_u, output.wrap_v, color);
     }
 
 }
 
-static void texture_cubemap_grad_mag_linear_min_linear_mip_nearest(struct texture *tex, float *coord, float *ddx, float *ddy, float *color){
+static void texture_cubemap_grad_mag_linear_min_linear_mip_nearest(er_Texture *tex, float *coord, float *ddx, float *ddy, float *color){
 
-    struct cubemap_uv output;
+    Cubemap_uv output;
     calculate_cubemap_uv(tex, coord, &output);
     float lod_level = calculate_cubemap_lod_level(tex, coord, ddx, ddy, &output);
     if(lod_level <= 0){
-        struct mipmap *mip = tex->mipmaps[0];
+        Mipmap *mip = tex->mipmaps[0];
         float *texels = mip->texels + output.cubemap_face * mip->width * mip->height * tex->components;
         sample_tex2D_bilinear(texels, mip->width, mip->height, tex->components, output.u, output.v, output.wrap_u, output.wrap_v, color);
     }else if(lod_level < tex->lod_max_level){
         int round_level = uiround(lod_level);
-        struct mipmap *mip = tex->mipmaps[round_level];
+        Mipmap *mip = tex->mipmaps[round_level];
         float *texels = mip->texels + output.cubemap_face * mip->width * mip->height * tex->components;
         sample_tex2D_bilinear(texels, mip->width, mip->height, tex->components, output.u, output.v, output.wrap_u, output.wrap_v, color);
     }else{
-        struct mipmap *mip = tex->mipmaps[tex->lod_max_level];
+        Mipmap *mip = tex->mipmaps[tex->lod_max_level];
         float *texels = mip->texels + output.cubemap_face * mip->width * mip->height * tex->components;
         sample_tex2D_bilinear(texels, mip->width, mip->height, tex->components, output.u, output.v, output.wrap_u, output.wrap_v, color);
     }
 
 }
 
-static void texture_cubemap_grad_mag_linear_min_nearest_mip_nearest(struct texture *tex, float *coord, float *ddx, float *ddy, float *color){
+static void texture_cubemap_grad_mag_linear_min_nearest_mip_nearest(er_Texture *tex, float *coord, float *ddx, float *ddy, float *color){
 
-    struct cubemap_uv output;
+    Cubemap_uv output;
     calculate_cubemap_uv(tex, coord, &output);
     float lod_level = calculate_cubemap_lod_level(tex, coord, ddx, ddy, &output);
     if(lod_level <= 0){
-        struct mipmap *mip = tex->mipmaps[0];
+        Mipmap *mip = tex->mipmaps[0];
         float *texels = mip->texels + output.cubemap_face * mip->width * mip->height * tex->components;
         sample_tex2D_bilinear(texels, mip->width, mip->height, tex->components, output.u, output.v, output.wrap_u, output.wrap_v, color);
     }else if(lod_level < tex->lod_max_level){
         int round_level = uiround(lod_level);
-        struct mipmap *mip = tex->mipmaps[round_level];
+        Mipmap *mip = tex->mipmaps[round_level];
         float *texels = mip->texels + output.cubemap_face * mip->width * mip->height * tex->components;
         sample_tex2D_nearest(texels, mip->width, mip->height, tex->components, output.u, output.v, output.wrap_u, output.wrap_v, color);
     }else{
-        struct mipmap *mip = tex->mipmaps[tex->lod_max_level];
+        Mipmap *mip = tex->mipmaps[tex->lod_max_level];
         float *texels = mip->texels + output.cubemap_face * mip->width * mip->height * tex->components;
         sample_tex2D_nearest(texels, mip->width, mip->height, tex->components, output.u, output.v, output.wrap_u, output.wrap_v, color);
     }
 
 }
 
-static void texture_cubemap_grad_mag_nearest_min_linear_mip_linear(struct texture *tex, float *coord, float *ddx, float *ddy, float *color){
+static void texture_cubemap_grad_mag_nearest_min_linear_mip_linear(er_Texture *tex, float *coord, float *ddx, float *ddy, float *color){
 
-    struct cubemap_uv output;
+    Cubemap_uv output;
     calculate_cubemap_uv(tex, coord, &output);
     float lod_level = calculate_cubemap_lod_level(tex, coord, ddx, ddy, &output);
     if(lod_level <= 0){
-        struct mipmap *mip = tex->mipmaps[0];
+        Mipmap *mip = tex->mipmaps[0];
         float *texels = mip->texels + output.cubemap_face * mip->width * mip->height * tex->components;
         sample_tex2D_nearest(texels, mip->width, mip->height, tex->components, output.u, output.v, output.wrap_u, output.wrap_v, color);
     }else if(lod_level < tex->lod_max_level){
@@ -1613,8 +1613,8 @@ static void texture_cubemap_grad_mag_nearest_min_linear_mip_linear(struct textur
         float lod_blend_factor = lod_level - lower_level;
         vec4 lower_color;
         vec4 upper_color;
-        struct mipmap *lower_mip = tex->mipmaps[lower_level];
-        struct mipmap *upper_mip = tex->mipmaps[upper_level];
+        Mipmap *lower_mip = tex->mipmaps[lower_level];
+        Mipmap *upper_mip = tex->mipmaps[upper_level];
         float *lower_texels = lower_mip->texels + output.cubemap_face * lower_mip->width * lower_mip->height * tex->components;
         float *upper_texels = upper_mip->texels + output.cubemap_face * upper_mip->width * upper_mip->height * tex->components;
         sample_tex2D_bilinear(lower_texels, lower_mip->width, lower_mip->height, tex->components, output.u, output.v, output.wrap_u, output.wrap_v, lower_color);
@@ -1624,20 +1624,20 @@ static void texture_cubemap_grad_mag_nearest_min_linear_mip_linear(struct textur
             color[c] = lerp(lower_color[c], upper_color[c], lod_blend_factor);
         }
     }else{
-        struct mipmap *mip = tex->mipmaps[tex->lod_max_level];
+        Mipmap *mip = tex->mipmaps[tex->lod_max_level];
         float *texels = mip->texels + output.cubemap_face * mip->width * mip->height * tex->components;
         sample_tex2D_bilinear(texels, mip->width, mip->height, tex->components, output.u, output.v, output.wrap_u, output.wrap_v, color);
     }
 
 }
 
-static void texture_cubemap_grad_mag_nearest_min_nearest_mip_linear(struct texture *tex, float *coord, float *ddx, float *ddy, float *color){
+static void texture_cubemap_grad_mag_nearest_min_nearest_mip_linear(er_Texture *tex, float *coord, float *ddx, float *ddy, float *color){
 
-    struct cubemap_uv output;
+    Cubemap_uv output;
     calculate_cubemap_uv(tex, coord, &output);
     float lod_level = calculate_cubemap_lod_level(tex, coord, ddx, ddy, &output);
     if(lod_level <= 0){
-        struct mipmap *mip = tex->mipmaps[0];
+        Mipmap *mip = tex->mipmaps[0];
         float *texels = mip->texels + output.cubemap_face * mip->width * mip->height * tex->components;
         sample_tex2D_nearest(texels, mip->width, mip->height, tex->components, output.u, output.v, output.wrap_u, output.wrap_v, color);
     }else if(lod_level < tex->lod_max_level){
@@ -1646,8 +1646,8 @@ static void texture_cubemap_grad_mag_nearest_min_nearest_mip_linear(struct textu
         float lod_blend_factor = lod_level - lower_level;
         vec4 lower_color;
         vec4 upper_color;
-        struct mipmap *lower_mip = tex->mipmaps[lower_level];
-        struct mipmap *upper_mip = tex->mipmaps[upper_level];
+        Mipmap *lower_mip = tex->mipmaps[lower_level];
+        Mipmap *upper_mip = tex->mipmaps[upper_level];
         float *lower_texels = lower_mip->texels + output.cubemap_face * lower_mip->width * lower_mip->height * tex->components;
         float *upper_texels = upper_mip->texels + output.cubemap_face * upper_mip->width * upper_mip->height * tex->components;
         sample_tex2D_nearest(lower_texels, lower_mip->width, lower_mip->height, tex->components, output.u, output.v, output.wrap_u, output.wrap_v, lower_color);
@@ -1657,62 +1657,61 @@ static void texture_cubemap_grad_mag_nearest_min_nearest_mip_linear(struct textu
             color[c] = lerp(lower_color[c], upper_color[c], lod_blend_factor);
         }
     }else{
-        struct mipmap *mip = tex->mipmaps[tex->lod_max_level];
+        Mipmap *mip = tex->mipmaps[tex->lod_max_level];
         float *texels = mip->texels + output.cubemap_face * mip->width * mip->height * tex->components;
         sample_tex2D_nearest(texels, mip->width, mip->height, tex->components, output.u, output.v, output.wrap_u, output.wrap_v, color);
     }
 
 }
 
-static void texture_cubemap_grad_mag_nearest_min_linear_mip_nearest(struct texture *tex, float *coord, float *ddx, float *ddy, float *color){
+static void texture_cubemap_grad_mag_nearest_min_linear_mip_nearest(er_Texture *tex, float *coord, float *ddx, float *ddy, float *color){
 
-    struct cubemap_uv output;
+    Cubemap_uv output;
     calculate_cubemap_uv(tex, coord, &output);
     float lod_level = calculate_cubemap_lod_level(tex, coord, ddx, ddy, &output);
     if(lod_level <= 0){
-        struct mipmap *mip = tex->mipmaps[0];
+        Mipmap *mip = tex->mipmaps[0];
         float *texels = mip->texels + output.cubemap_face * mip->width * mip->height * tex->components;
         sample_tex2D_nearest(texels, mip->width, mip->height, tex->components, output.u, output.v, output.wrap_u, output.wrap_v, color);
     }else if(lod_level < tex->lod_max_level){
         int round_level = uiround(lod_level);
-        struct mipmap *mip = tex->mipmaps[round_level];
+        Mipmap *mip = tex->mipmaps[round_level];
         float *texels = mip->texels + output.cubemap_face * mip->width * mip->height * tex->components;
         sample_tex2D_bilinear(texels, mip->width, mip->height, tex->components, output.u, output.v, output.wrap_u, output.wrap_v, color);
     }else{
-        struct mipmap *mip = tex->mipmaps[tex->lod_max_level];
+        Mipmap *mip = tex->mipmaps[tex->lod_max_level];
         float *texels = mip->texels + output.cubemap_face * mip->width * mip->height * tex->components;
         sample_tex2D_bilinear(texels, mip->width, mip->height, tex->components, output.u, output.v, output.wrap_u, output.wrap_v, color);
     }
 
 }
 
-static void texture_cubemap_grad_mag_nearest_min_nearest_mip_nearest(struct texture *tex, float *coord, float *ddx, float *ddy, float *color){
+static void texture_cubemap_grad_mag_nearest_min_nearest_mip_nearest(er_Texture *tex, float *coord, float *ddx, float *ddy, float *color){
 
-    struct cubemap_uv output;
+    Cubemap_uv output;
     calculate_cubemap_uv(tex, coord, &output);
     float lod_level = calculate_cubemap_lod_level(tex, coord, ddx, ddy, &output);
     if(lod_level <= 0){
-        struct mipmap *mip = tex->mipmaps[0];
+        Mipmap *mip = tex->mipmaps[0];
         float *texels = mip->texels + output.cubemap_face * mip->width * mip->height * tex->components;
         sample_tex2D_nearest(texels, mip->width, mip->height, tex->components, output.u, output.v, output.wrap_u, output.wrap_v, color);
     }else if(lod_level < tex->lod_max_level){
         int round_level = uiround(lod_level);
-        struct mipmap *mip = tex->mipmaps[round_level];
+        Mipmap *mip = tex->mipmaps[round_level];
         float *texels = mip->texels + output.cubemap_face * mip->width * mip->height * tex->components;
         sample_tex2D_nearest(texels, mip->width, mip->height, tex->components, output.u, output.v, output.wrap_u, output.wrap_v, color);
     }else{
-        struct mipmap *mip = tex->mipmaps[tex->lod_max_level];
+        Mipmap *mip = tex->mipmaps[tex->lod_max_level];
         float *texels = mip->texels + output.cubemap_face * mip->width * mip->height * tex->components;
         sample_tex2D_nearest(texels, mip->width, mip->height, tex->components, output.u, output.v, output.wrap_u, output.wrap_v, color);
     }
 
 }
 
-void er_delete_texture(struct texture *tex){
+er_StatusEnum er_delete_texture(er_Texture *tex){
 
     if(tex == NULL){
-        set_error(ER_NULL_POINTER);
-        return;
+        return ER_NULL_POINTER;
     }
     if(tex->mipmaps != NULL){
         int i;
@@ -1727,18 +1726,21 @@ void er_delete_texture(struct texture *tex){
         free(tex->mipmaps);
     }
     free(tex);
-
+    return ER_NO_ERROR;
 }
 
-struct texture* er_create_texture1D(int width, int internal_format){
+er_StatusEnum er_create_texture1D(er_Texture **tex, int width, er_TextureFormatEnum internal_format){
 
-    if( width <= 0){
-        set_error(ER_OUT_OF_RANGE);
-        return NULL;
+    if(tex == NULL){
+        return ER_NULL_POINTER;
+    }
+    *tex = NULL;
+
+    if( width == 0){
+        return ER_INVALID_ARGUMENT;
     }
     if(width & (width-1)){
-        set_error(ER_NO_POWER_OF_TWO);
-        return NULL;
+        return ER_NO_POWER_OF_TWO;
     }
     int components;
     if(internal_format == ER_R32F){
@@ -1752,14 +1754,12 @@ struct texture* er_create_texture1D(int width, int internal_format){
     }else if(internal_format == ER_DEPTH32F){
         components = 1;
     }else{
-        set_error(ER_INVALID_ENUM);
-        return NULL;
+        return ER_INVALID_ARGUMENT;
     }
 
-    struct texture *new_texture = (struct texture*)malloc(sizeof(struct texture));
+    er_Texture *new_texture = (er_Texture*)malloc(sizeof(er_Texture));
     if(new_texture == NULL){
-        set_error(ER_OUT_OF_MEMORY);
-        return NULL;
+        return ER_OUT_OF_MEMORY;
     }
     new_texture->texture_target = ER_TEXTURE_1D;
     new_texture->texture_format = internal_format;
@@ -1774,11 +1774,10 @@ struct texture* er_create_texture1D(int width, int internal_format){
     new_texture->write_texture = write_texture1D;
     int max_level = (int)(log( (float)width) / log(2.0f));
     int mip_levels = max_level+1;
-    new_texture->mipmaps = (struct mipmap**)malloc(mip_levels*sizeof(struct mipmap*));
+    new_texture->mipmaps = (Mipmap**)malloc(mip_levels*sizeof(Mipmap*));
     if(new_texture->mipmaps == NULL){
-        set_error(ER_OUT_OF_MEMORY);
         er_delete_texture(new_texture);
-        return NULL;
+        return ER_OUT_OF_MEMORY;
     }
     new_texture->mipmap_stack_size = mip_levels;
     new_texture->lod_max_level = max_level;
@@ -1786,33 +1785,36 @@ struct texture* er_create_texture1D(int width, int internal_format){
     for(j = 0; j < mip_levels; j++){
         new_texture->mipmaps[j] = NULL; 
     }
-    struct mipmap *mip0 = (struct mipmap*)malloc(sizeof(struct mipmap));
+    Mipmap *mip0 = (Mipmap*)malloc(sizeof(Mipmap));
     if(mip0 == NULL){
-        set_error(ER_OUT_OF_MEMORY);
         er_delete_texture(new_texture);
-        return NULL;
+        return ER_OUT_OF_MEMORY;
     }
     new_texture->mipmaps[0] = mip0;
     mip0->width = width;
     mip0->texels = (float*)malloc(width * new_texture->components * sizeof(float));
     if(mip0->texels == NULL){
-        set_error(ER_OUT_OF_MEMORY);
         er_delete_texture(new_texture);
-        return NULL;
+        return ER_OUT_OF_MEMORY;
     }
-    return new_texture;
+    *tex = new_texture;
+
+    return ER_NO_ERROR;
 
 }
 
-struct texture* er_create_texture2D(int width, int height, int internal_format){
+er_StatusEnum er_create_texture2D(er_Texture** tex, int width, int height, er_TextureFormatEnum internal_format){
 
-    if( width <= 0 || height <= 0){
-        set_error(ER_OUT_OF_RANGE);
-        return NULL;
+    if(tex == NULL){
+        return ER_NULL_POINTER;
+    }
+    *tex = NULL;
+
+    if( width == 0 || height == 0){
+        return ER_INVALID_ARGUMENT;
     }
     if(width & (width-1) || height & (height-1)){
-        set_error(ER_NO_POWER_OF_TWO);
-        return NULL;
+        return ER_NO_POWER_OF_TWO;
     }
     int components;
     if(internal_format == ER_R32F){
@@ -1826,14 +1828,12 @@ struct texture* er_create_texture2D(int width, int height, int internal_format){
     }else if(internal_format == ER_DEPTH32F){
         components = 1;
     }else{
-        set_error(ER_INVALID_ENUM);
-        return NULL;
+        return ER_INVALID_ARGUMENT;
     }
 
-    struct texture *new_texture = (struct texture*)malloc(sizeof(struct texture));
+    er_Texture *new_texture = (er_Texture*)malloc(sizeof(er_Texture));
     if(new_texture == NULL){
-        set_error(ER_OUT_OF_MEMORY);
-        return NULL;
+        return ER_OUT_OF_MEMORY;
     }
     new_texture->texture_target = ER_TEXTURE_2D;
     new_texture->texture_format = internal_format;
@@ -1851,11 +1851,10 @@ struct texture* er_create_texture2D(int width, int height, int internal_format){
     int max_dimension = max(width, height);
     int max_level = (int)(log( (float)max_dimension) / log(2.0f));
     int mip_levels = max_level+1;
-    new_texture->mipmaps = (struct mipmap**)malloc(mip_levels*sizeof(struct mipmap*));
+    new_texture->mipmaps = (Mipmap**)malloc(mip_levels*sizeof(Mipmap*));
     if(new_texture->mipmaps == NULL){
-        set_error(ER_OUT_OF_MEMORY);
         er_delete_texture(new_texture);
-        return NULL;
+        return ER_OUT_OF_MEMORY;
     }
     new_texture->mipmap_stack_size = mip_levels;
     new_texture->lod_max_level = max_level;
@@ -1863,34 +1862,37 @@ struct texture* er_create_texture2D(int width, int height, int internal_format){
     for(j = 0; j < mip_levels; j++){
         new_texture->mipmaps[j] = NULL; 
     }
-    struct mipmap *mip0 = (struct mipmap*)malloc(sizeof(struct mipmap));
+    Mipmap *mip0 = (Mipmap*)malloc(sizeof(Mipmap));
     if(mip0 == NULL){
-        set_error(ER_OUT_OF_MEMORY);
         er_delete_texture(new_texture);
-        return NULL;
+        return ER_OUT_OF_MEMORY;
     }
     new_texture->mipmaps[0] = mip0;
     mip0->width = width;
     mip0->height = height;
     mip0->texels = (float*)malloc(width * height * new_texture->components * sizeof(float));
     if(mip0->texels == NULL){
-        set_error(ER_OUT_OF_MEMORY);
         er_delete_texture(new_texture);
-        return NULL;
+        return ER_OUT_OF_MEMORY;
     }
-    return new_texture;
-
+    *tex = new_texture;
+    
+    return ER_NO_ERROR;
+    
 }
 
-struct texture* er_create_texture_cubemap(int dimension, int internal_format){
+er_StatusEnum er_create_texture_cubemap(er_Texture **tex, int size, er_TextureFormatEnum internal_format){
 
-    if( dimension <= 0){
-        set_error(ER_OUT_OF_RANGE);
-        return NULL;
+    if(tex == NULL) {
+        return ER_NULL_POINTER;
     }
-    if(dimension & (dimension-1)){
-        set_error(ER_NO_POWER_OF_TWO);
-        return NULL;
+    *tex = NULL;
+
+    if( size == 0){
+        return ER_INVALID_ARGUMENT;
+    }
+    if(size & (size-1)){
+        return ER_NO_POWER_OF_TWO;
     }
     int components;
     if(internal_format == ER_R32F){
@@ -1904,14 +1906,12 @@ struct texture* er_create_texture_cubemap(int dimension, int internal_format){
     }else if(internal_format == ER_DEPTH32F){
         components = 1;
     }else{
-        set_error(ER_INVALID_ENUM);
-        return NULL;
+        return ER_INVALID_ARGUMENT;
     }
 
-    struct texture *new_texture = (struct texture*)malloc(sizeof(struct texture));
+    er_Texture *new_texture = (er_Texture*)malloc(sizeof(er_Texture));
     if(new_texture == NULL){
-        set_error(ER_OUT_OF_MEMORY);
-        return NULL;
+        return ER_OUT_OF_MEMORY;
     }
     new_texture->texture_target = ER_TEXTURE_CUBE_MAP;
     new_texture->texture_format = internal_format;
@@ -1926,13 +1926,12 @@ struct texture* er_create_texture_cubemap(int dimension, int internal_format){
     new_texture->texture_lod = texture_cubemap_lod_mag_nearest_min_nearest;
     new_texture->texture_grad = texture_cubemap_grad_mag_nearest_min_nearest;
     new_texture->write_texture = write_texture_cubemap;
-    int max_level = (int)(log( (float)dimension) / log(2.0f));
+    int max_level = (int)(log( (float)size) / log(2.0f));
     int mip_levels = max_level+1;
-    new_texture->mipmaps = (struct mipmap**)malloc(mip_levels*sizeof(struct mipmap*));
+    new_texture->mipmaps = (Mipmap**)malloc(mip_levels*sizeof(Mipmap*));
     if(new_texture->mipmaps == NULL){
-        set_error(ER_OUT_OF_MEMORY);
         er_delete_texture(new_texture);
-        return NULL;
+        return ER_OUT_OF_MEMORY;
     }
     new_texture->mipmap_stack_size = mip_levels;
     new_texture->lod_max_level = max_level;
@@ -1940,71 +1939,68 @@ struct texture* er_create_texture_cubemap(int dimension, int internal_format){
     for(j = 0; j < mip_levels; j++){
         new_texture->mipmaps[j] = NULL; 
     }
-    struct mipmap *mip0 = (struct mipmap*)malloc(sizeof(struct mipmap));
+    Mipmap *mip0 = (Mipmap*)malloc(sizeof(Mipmap));
     if(mip0 == NULL){
-        set_error(ER_OUT_OF_MEMORY);
         er_delete_texture(new_texture);
-        return NULL;
+        return ER_OUT_OF_MEMORY;
     }
     new_texture->mipmaps[0] = mip0;
-    mip0->width = dimension;
-    mip0->height = dimension;
-    mip0->texels = (float*)malloc(6 * dimension * dimension * new_texture->components * sizeof(float));
+    mip0->width = size;
+    mip0->height = size;
+    mip0->texels = (float*)malloc(6 * size * size * new_texture->components * sizeof(float));
     if(mip0->texels == NULL){
-        set_error(ER_OUT_OF_MEMORY);
         er_delete_texture(new_texture);
-        return NULL;
+        return ER_OUT_OF_MEMORY;
     }
-    return new_texture;
+    *tex = new_texture;
+    return ER_NO_ERROR;
 
 }
 
-void* er_texture_ptr(struct texture *tex, int texture_target, int level){
+er_StatusEnum er_texture_ptr(er_Texture *tex, er_TextureTargetEnum texture_target, int level, float **data){
 
     if(tex == NULL){
-        set_error(ER_NULL_POINTER);
-        return NULL;
+        return ER_NULL_POINTER;
     }
+    
+    if(data == NULL) {
+        return ER_NULL_POINTER;
+    }
+    *data = NULL;
+    
     if(texture_target != ER_TEXTURE_1D && texture_target != ER_TEXTURE_2D && 
         texture_target != ER_TEXTURE_CUBE_MAP_POSITIVE_X && texture_target != ER_TEXTURE_CUBE_MAP_NEGATIVE_X && 
         texture_target != ER_TEXTURE_CUBE_MAP_POSITIVE_Y && texture_target != ER_TEXTURE_CUBE_MAP_NEGATIVE_Y &&
         texture_target != ER_TEXTURE_CUBE_MAP_POSITIVE_Z && texture_target != ER_TEXTURE_CUBE_MAP_NEGATIVE_Z){
-        set_error(ER_INVALID_ENUM);
-        return NULL;
+        return ER_INVALID_ARGUMENT;
     }
-    if(level < 0 || level >= tex->lod_max_level){
-        set_error(ER_OUT_OF_RANGE);
-        return NULL;
-    }
+    
     if(tex->texture_target == ER_TEXTURE_1D && texture_target != ER_TEXTURE_1D){
-        set_error(ER_INVALID_OPERATION);
-        return NULL;
+        return ER_INVALID_OPERATION;
     }
     if(tex->texture_target == ER_TEXTURE_2D && texture_target != ER_TEXTURE_2D){
-        set_error(ER_INVALID_OPERATION);
-        return NULL;
+        return ER_INVALID_OPERATION;
     }
     if(tex->texture_target == ER_TEXTURE_CUBE_MAP && texture_target != ER_TEXTURE_CUBE_MAP_POSITIVE_X && texture_target != ER_TEXTURE_CUBE_MAP_NEGATIVE_X && texture_target != ER_TEXTURE_CUBE_MAP_POSITIVE_Y && texture_target != ER_TEXTURE_CUBE_MAP_NEGATIVE_Y && texture_target != ER_TEXTURE_CUBE_MAP_POSITIVE_Z && texture_target != ER_TEXTURE_CUBE_MAP_NEGATIVE_Z ){
-        set_error(ER_INVALID_OPERATION);
-        return NULL;
+        return ER_INVALID_OPERATION;
     }
-
-    void *data = NULL;
+    
+    level = clamp(level, 0, tex->lod_max_level);
 
     if(texture_target == ER_TEXTURE_1D){
-        data = tex->mipmaps[level]->texels;
+        *data = tex->mipmaps[level]->texels;
     }else if(texture_target == ER_TEXTURE_2D){
-        data = tex->mipmaps[level]->texels;
+        *data = tex->mipmaps[level]->texels;
     }else if(texture_target >= ER_TEXTURE_CUBE_MAP_POSITIVE_X && texture_target <= ER_TEXTURE_CUBE_MAP_NEGATIVE_Z){
         int cubemap_face = texture_target - ER_TEXTURE_CUBE_MAP_POSITIVE_X;
-        data = (tex->mipmaps[level]->texels + cubemap_face * tex->mipmaps[level]->width * tex->mipmaps[level]->width * tex->components);
+        *data = (tex->mipmaps[level]->texels + cubemap_face * tex->mipmaps[level]->width * tex->mipmaps[level]->width * tex->components);
     }
 
-    return data;
+    return ER_NO_ERROR;
 
 }
 
-static void update_filter_functions(struct texture *tex){
+static void update_filter_functions(er_Texture *tex){
 
     if(tex->minification_filter == ER_LINEAR){
         if(tex->magnification_filter == ER_LINEAR){
@@ -2154,11 +2150,10 @@ static void update_filter_functions(struct texture *tex){
 
 }
 
-void er_texture_filtering(struct texture *tex, int parameter, int value){
+er_StatusEnum er_texture_filtering(er_Texture *tex, er_TextureParamEnum parameter, er_TextureFilterEnum value){
 
     if(tex == NULL){
-        set_error(ER_NULL_POINTER);
-        return;
+        return ER_NULL_POINTER;
     }
 
     if(parameter == ER_MINIFICATION_FILTER){
@@ -2166,25 +2161,25 @@ void er_texture_filtering(struct texture *tex, int parameter, int value){
             tex->minification_filter = value;
             update_filter_functions(tex);
         }else{
-            set_error(ER_INVALID_ENUM);
+            return ER_INVALID_ARGUMENT;
         }
     }else if(parameter == ER_MAGNIFICATION_FILTER){
         if(value == ER_LINEAR || value == ER_NEAREST){
             tex->magnification_filter = value;
             update_filter_functions(tex);
         }else{
-            set_error(ER_INVALID_ENUM);
+            return ER_INVALID_ARGUMENT;
         }
     }else{
-        set_error(ER_INVALID_ENUM);
+        return ER_INVALID_ARGUMENT;
     }
+    return ER_NO_ERROR;
 }
 
-void er_texture_wrap_mode(struct texture *tex, int parameter, int value){
+er_StatusEnum er_texture_wrap_mode(er_Texture *tex, er_TextureParamEnum parameter, er_TextureWrapModeEnum value){
 
     if(tex == NULL){
-        set_error(ER_NULL_POINTER);
-        return;
+        return ER_NULL_POINTER;
     }
     if(parameter == ER_WRAP_S){
         if(value == ER_REPEAT){
@@ -2192,7 +2187,7 @@ void er_texture_wrap_mode(struct texture *tex, int parameter, int value){
         }else if (value == ER_CLAMP_TO_EDGE){
             tex->wrap_s = clamp_to_edge;
         }else{
-            set_error(ER_INVALID_ENUM);
+            return ER_INVALID_ARGUMENT;
         }
     }else if(parameter == ER_WRAP_T){
         if(value == ER_REPEAT){
@@ -2200,7 +2195,7 @@ void er_texture_wrap_mode(struct texture *tex, int parameter, int value){
         }else if (value == ER_CLAMP_TO_EDGE){
             tex->wrap_t = clamp_to_edge;
         }else{
-            set_error(ER_INVALID_ENUM);
+            return ER_INVALID_ARGUMENT;
         }
     }else if(parameter == ER_WRAP_R){
         if(value == ER_REPEAT){
@@ -2208,39 +2203,36 @@ void er_texture_wrap_mode(struct texture *tex, int parameter, int value){
         }else if (value == ER_CLAMP_TO_EDGE){
             tex->wrap_r = clamp_to_edge;
         }else{
-            set_error(ER_INVALID_ENUM);
+            return ER_INVALID_ARGUMENT;
         }
     }else{
-        set_error(ER_INVALID_ENUM);
+        return ER_INVALID_ARGUMENT;
     }
-
+    return ER_NO_ERROR;
 }
 
 /*
  * Generate mipmap stack for a texture 1D.
  * Used box filtering.
  */
-static void generate_mipmaps_texture1D(struct texture *tex){
+static er_StatusEnum generate_mipmaps_texture1D(er_Texture *tex){
 
-    int cur_width, prev_width;
+    int cur_width;
     int compsize = tex->components;
     cur_width = tex->mipmaps[0]->width;
-    prev_width = cur_width;
     cur_width = cur_width >> 1;
     int l;
     for(l = 1; l <= tex->lod_max_level; l++){
         if(tex->mipmaps[l] == NULL){
-            tex->mipmaps[l] = (struct mipmap*)malloc(sizeof(struct mipmap));
+            tex->mipmaps[l] = (Mipmap*)malloc(sizeof(Mipmap));
             if(tex->mipmaps[l] == NULL){
-                set_error(ER_OUT_OF_MEMORY);
-                return;
+                return ER_OUT_OF_MEMORY;
             }
             tex->mipmaps[l]->texels = (float*)malloc(cur_width * compsize * sizeof(float));
             if(tex->mipmaps[l]->texels == NULL){
                 free(tex->mipmaps[l]);
                 tex->mipmaps[l] = NULL;
-                set_error(ER_OUT_OF_MEMORY);
-                return;
+                return ER_OUT_OF_MEMORY;
             }
             tex->mipmaps[l]->width = cur_width;
         }
@@ -2253,17 +2245,16 @@ static void generate_mipmaps_texture1D(struct texture *tex){
                 current[i*compsize + c] = 0.5f * (previous[ip*compsize + c] + previous[(ip+1)*compsize + c]);
             }
         }
-        prev_width = cur_width;
         cur_width = cur_width >> 1;
     }
-
+    return ER_NO_ERROR;
 }
 
 /*
  * Generate mipmap stack for a texture 2D.
  * Used box filtering.
  */
-static void generate_mipmaps_texture2D(struct texture *tex){
+static er_StatusEnum generate_mipmaps_texture2D(er_Texture *tex){
 
     int cur_width, cur_height, prev_width, prev_height;
     int compsize = tex->components;
@@ -2280,17 +2271,15 @@ static void generate_mipmaps_texture2D(struct texture *tex){
     int l;
     for(l = 1; l <= tex->lod_max_level; l++){
         if(tex->mipmaps[l] == NULL){
-            tex->mipmaps[l] = (struct mipmap*)malloc(sizeof(struct mipmap));
+            tex->mipmaps[l] = (Mipmap*)malloc(sizeof(Mipmap));
             if(tex->mipmaps[l] == NULL){
-                set_error(ER_OUT_OF_MEMORY);
-                return;
+                return ER_OUT_OF_MEMORY;
             }
             tex->mipmaps[l]->texels = (float*)malloc(cur_width * cur_height * compsize * sizeof(float));
             if(tex->mipmaps[l]->texels == NULL){
                 free(tex->mipmaps[l]);
                 tex->mipmaps[l] = NULL;
-                set_error(ER_OUT_OF_MEMORY);
-                return;
+                return ER_OUT_OF_MEMORY;
             }
             tex->mipmaps[l]->width = cur_width;
             tex->mipmaps[l]->height = cur_height;
@@ -2332,14 +2321,14 @@ static void generate_mipmaps_texture2D(struct texture *tex){
             cur_height >>= 1;
         }
     }
-
+    return ER_NO_ERROR;
 }
 
 /*
  * Generate mipmap stack for a texture cube map.
  * Used box filtering.
  */
-static void generate_mipmaps_texture_cubemap(struct texture *tex){
+static er_StatusEnum generate_mipmaps_texture_cubemap(er_Texture *tex){
 
     int cur_dim, prev_dim;
     int compsize = tex->components;
@@ -2349,17 +2338,15 @@ static void generate_mipmaps_texture_cubemap(struct texture *tex){
     int l;
     for(l = 1; l <= tex->lod_max_level; l++){
         if(tex->mipmaps[l] == NULL){
-            tex->mipmaps[l] = (struct mipmap*)malloc(sizeof(struct mipmap));
+            tex->mipmaps[l] = (Mipmap*)malloc(sizeof(Mipmap));
             if(tex->mipmaps[l] == NULL){
-                set_error(ER_OUT_OF_MEMORY);
-                return;
+                return ER_OUT_OF_MEMORY;
             }
             tex->mipmaps[l]->texels = (float*)malloc( 6 * cur_dim * cur_dim * compsize * sizeof(float));
             if(tex->mipmaps[l]->texels == NULL){
                 free(tex->mipmaps[l]);
                 tex->mipmaps[l] = NULL;
-                set_error(ER_OUT_OF_MEMORY);
-                return;
+                return ER_OUT_OF_MEMORY;
             }
             tex->mipmaps[l]->width = cur_dim;
             tex->mipmaps[l]->height = cur_dim;
@@ -2381,21 +2368,20 @@ static void generate_mipmaps_texture_cubemap(struct texture *tex){
         prev_dim = cur_dim;
         cur_dim = cur_dim >> 1;
     }
-
+    return ER_NO_ERROR;
 }
 
-void er_generate_mipmaps(struct texture *tex){
+er_StatusEnum er_generate_mipmaps(er_Texture *tex){
 
     if(tex == NULL){
-        set_error(ER_NULL_POINTER);
-        return;
+        return ER_NULL_POINTER;
     }
     if(tex->texture_target == ER_TEXTURE_1D){
-        generate_mipmaps_texture1D(tex);
+        return generate_mipmaps_texture1D(tex);
     }else if(tex->texture_target == ER_TEXTURE_2D){
-        generate_mipmaps_texture2D(tex);
+        return generate_mipmaps_texture2D(tex);
     }else if(tex->texture_target == ER_TEXTURE_CUBE_MAP){
-        generate_mipmaps_texture_cubemap(tex);
+        return generate_mipmaps_texture_cubemap(tex);
     }
-
+    return ER_NO_ERROR;
 }

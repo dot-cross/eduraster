@@ -2,16 +2,16 @@
 
 #define VERTEX_CACHE_SIZE 32
 
-struct vertex_cache_register{
+typedef struct VertexCacheRegister{
     int input_index;
     int output_index;
-};
+} VertexCacheRegister;
 
 //Vertex Cache
-static struct vertex_cache_register vertex_cache[VERTEX_CACHE_SIZE];
+static VertexCacheRegister vertex_cache[VERTEX_CACHE_SIZE];
 
 //Input Buffer
-struct vertex_input *input_buffer = NULL;
+er_VertexInput *input_buffer = NULL;
 unsigned int input_buffer_size;
 
 //Indices buffer
@@ -19,15 +19,12 @@ unsigned int *input_indices = NULL;
 unsigned int input_indices_size;
 
 //Output Buffer
-struct output_buffer_register *output_buffer = NULL;
+OutputBufferRegister *output_buffer = NULL;
 unsigned int output_buffer_size;
 
 //Indices buffer after clipping operation
 unsigned int *output_indices = NULL;
 unsigned int output_indices_size;
-
-//Current primitive
-unsigned int current_primitive;
 
 //Current vertex state
 vec3 current_normal;
@@ -37,56 +34,42 @@ float current_fog_coord;
 
 //Begin/End calls
 static unsigned int batch_size;
-static void (*process_batch)();
+static void (*be_process_func)();
 
 //Viewport data
-unsigned int WINDOW_ORIGIN_X, WINDOW_ORIGIN_Y, WINDOW_WIDTH, WINDOW_HEIGHT;
+unsigned int window_origin_x, window_origin_y, window_width, window_height;
 
 /* Variables for select front or back face  */
-unsigned int front_face_orientation;
-unsigned int front_face_mode;
-unsigned int back_face_mode;
-unsigned int cull_face_enable;
-unsigned int cull_face;
-
-/* Internal error */
-static int error_state;
+er_PolygonOrientationEnum front_face_orientation;
+er_PolygonModeEnum front_face_mode;
+er_PolygonModeEnum back_face_mode;
+er_Bool cull_face_enable;
+er_PolygonFaceEnum cull_face;
 
 /* Uniform vars */
-struct uniform_variables global_variables;
+er_UniVars global_variables;
 
-const char* error_messages[] = {
-    "No error.",
-    "Numeric argument out of valid range.",
-    "Invalid enum.",
-    "Out of memory.",
-    "Invalid operation on current state.",
-    "Stack Overflow.",
-    "Stack Underflow.",
-    "Null Pointer.",
-    "Texture dimension isn't power of two.",
-    "The texture isn't consistently defined. Invalid image arrays or texture parameters.",
-    "No program has been assigned for execution."
+/* Error messages */
+const char* status_strings[] = {
+    "No error",
+    "Invalid Argument",
+    "No vertex array has been set",
+    "Out of memory",
+    "Invalid operation on current state",
+    "Matrix Stack Overflow",
+    "Matrix Stack Underflow",
+    "Invalid Argument: null pointer",
+    "Texture size isn't power of two",
+    "No program has been set"
 };
 
-int er_get_error(){
-    int error = error_state;
-    error_state = ER_NO_ERROR;
-    return error;
+const char* er_status_string(er_StatusEnum status){
+    if(status >= 0 && status < sizeof(status_strings)/sizeof(const char*))
+        return status_strings[status];
+    return NULL;
 }
 
-const char* er_get_error_string(int error){
-    return error_messages[error];
-}
-
-void set_error(int error){
-    error_state = error;
-}
-
-int er_init(){
-
-    /* Init error state */
-    error_state = ER_NO_ERROR;
+er_StatusEnum er_init(){
 
     /* Init matrix stack */
     int i;
@@ -104,35 +87,31 @@ int er_init(){
     proj_stack_counter = 0;
 
     /* Init internal buffers of vertex and indices */
-    input_buffer = (struct vertex_input*)malloc( TRIANGLES_BATCH_SIZE * 3 * sizeof(struct vertex_input));
+    input_buffer = (er_VertexInput*)malloc( TRIANGLES_BATCH_SIZE * 3 * sizeof(er_VertexInput));
     if(input_buffer == NULL){
-        set_error(ER_OUT_OF_MEMORY);
         er_quit();
-        return -1;
+        return ER_OUT_OF_MEMORY;
     }
     input_buffer_size = 0;
 
-    output_buffer = (struct output_buffer_register*)malloc( (TRIANGLES_BATCH_SIZE * 3 + TRIANGLES_BATCH_SIZE * 12) * sizeof(struct output_buffer_register));
+    output_buffer = (OutputBufferRegister*)malloc( (TRIANGLES_BATCH_SIZE * 3 + TRIANGLES_BATCH_SIZE * 12) * sizeof(OutputBufferRegister));
     if(output_buffer == NULL){
-        set_error(ER_OUT_OF_MEMORY);
         er_quit();
-        return -1;
+        return ER_OUT_OF_MEMORY;
     }
     output_buffer_size = 0;
 
     input_indices = (unsigned int*)malloc( TRIANGLES_BATCH_SIZE * 3 * sizeof(unsigned int) );
     if(input_indices == NULL){
-        set_error(ER_OUT_OF_MEMORY);
         er_quit();
-        return -1;
+        return ER_OUT_OF_MEMORY;
     }
     input_indices_size = 0;
 
     output_indices = (unsigned int*)malloc( (TRIANGLES_BATCH_SIZE * 7 * 3) * sizeof(unsigned int) );
     if(output_indices == NULL){
-        set_error(ER_OUT_OF_MEMORY);
         er_quit();
-        return -1;
+        return ER_OUT_OF_MEMORY;
     }
     output_indices_size = 0;
 
@@ -142,8 +121,8 @@ int er_init(){
     /* Set current program to null */
     current_program = NULL;
 
-    /* Set current primitive */
-    current_primitive = NO_PRIMITIVE;
+    /* Set current process function to null */
+    be_process_func = NULL;
 
     /* Point sprites settings */
     point_sprite_coord_origin = ER_POINT_SPRITE_LOWER_LEFT;
@@ -156,7 +135,7 @@ int er_init(){
     cull_face_enable = ER_FALSE;
     cull_face = ER_BACK;
 
-    return 0;
+    return ER_NO_ERROR;
 
 }
 
@@ -181,7 +160,7 @@ void er_quit(){
 
 }
 
-void er_enable(unsigned int param, unsigned int enable){
+er_StatusEnum er_enable(er_EnableSettingEnum param, er_Bool enable){
 
     switch( param ){
 
@@ -192,52 +171,52 @@ void er_enable(unsigned int param, unsigned int enable){
             point_sprite_enable = enable;
             break;
         default:
-            set_error(ER_INVALID_ENUM);
-            break;
+            return ER_INVALID_ARGUMENT;
     }
-
+    return ER_NO_ERROR;
 }
 
-void er_point_parameteri(int param, int value){
+er_StatusEnum er_point_parameteri(er_PointSpriteEnum param, er_PointSpriteEnum value){
 
     if( param == ER_POINT_SPRITE_COORD_ORIGIN){
         point_sprite_coord_origin = value;
     }else{
-        set_error(ER_INVALID_ENUM);
+        return ER_INVALID_ARGUMENT;
     }
-
+    return ER_NO_ERROR;
 }
 
-void er_cull_face(unsigned int face){
+er_StatusEnum er_cull_face(er_PolygonFaceEnum face){
     if(face == ER_FRONT || face == ER_BACK || face == ER_FRONT_AND_BACK){
         cull_face = face;
     }else{
-        set_error(ER_INVALID_ENUM);
+        return ER_INVALID_ARGUMENT;
     }
+    return ER_NO_ERROR;
 }
 
-void er_front_face(unsigned int orientation){
+er_StatusEnum er_front_face(er_PolygonOrientationEnum orientation){
     if(orientation == ER_COUNTER_CLOCK_WISE || orientation == ER_CLOCK_WISE){
         front_face_orientation = orientation;
     }else{
-        set_error(ER_INVALID_ENUM);
+        return ER_INVALID_ARGUMENT;
     }
+    return ER_NO_ERROR;
 }
 
-void er_viewport(unsigned int x, unsigned int y, unsigned int width, unsigned int height){
+er_StatusEnum er_viewport(unsigned int x, unsigned int y, unsigned int width, unsigned int height){
 
     if(width == 0 || height == 0){
-        set_error(ER_OUT_OF_RANGE);
-        return;
+        return ER_INVALID_ARGUMENT;
     }
-    WINDOW_ORIGIN_X = x;
-    WINDOW_ORIGIN_Y = y;
-    WINDOW_WIDTH = width;
-    WINDOW_HEIGHT = height;
-
+    window_origin_x = x;
+    window_origin_y = y;
+    window_width = width;
+    window_height = height;
+    return ER_NO_ERROR;
 }
 
-void er_polygon_mode(int face, int mode){
+er_StatusEnum er_polygon_mode(er_PolygonFaceEnum face, er_PolygonModeEnum mode){
 
     if(face == ER_FRONT){
         front_face_mode = mode;
@@ -247,9 +226,9 @@ void er_polygon_mode(int face, int mode){
         front_face_mode = mode;
         back_face_mode = mode;
     }else{
-        set_error(ER_INVALID_ENUM);
+        return ER_INVALID_ARGUMENT;
     }
-
+    return ER_NO_ERROR;
 }
 
 static void clear_vertex_cache(){
@@ -297,10 +276,10 @@ void update_uniform_vars(){
     global_variables.projection = proj_stack[proj_stack_counter];
     global_variables.projection_inverse = inv_proj_stack[proj_stack_counter];
     global_variables.modelview_projection = mv_proj_matrix;
-    global_variables.origin_x = WINDOW_ORIGIN_X;
-    global_variables.origin_y = WINDOW_ORIGIN_Y;
-    global_variables.width = WINDOW_WIDTH;
-    global_variables.height = WINDOW_HEIGHT;
+    global_variables.origin_x = window_origin_x;
+    global_variables.origin_y = window_origin_y;
+    global_variables.width =window_width;
+    global_variables.height = window_height;
     global_variables.uniform_integer = current_program->uniform_integer;
     global_variables.uniform_float = current_program->uniform_float;
     global_variables.uniform_ptr = current_program->uniform_ptr;
@@ -308,7 +287,7 @@ void update_uniform_vars(){
 
 }
 
-void er_begin(int primitive){
+er_StatusEnum er_begin(er_PrimitiveEnum primitive){
     //Update matrix data
     update_matrix_data();
     //Reset internal buffers size
@@ -316,28 +295,26 @@ void er_begin(int primitive){
     //Update global state
     update_uniform_vars();
     if(primitive == ER_POINTS){
-        process_batch = process_points;
+        be_process_func = process_points;
         batch_size = POINTS_BATCH_SIZE;
     }else if(primitive == ER_LINES){
-        process_batch = process_lines;
+        be_process_func = process_lines;
         batch_size = LINES_BATCH_SIZE * 2;
     }else if(primitive == ER_TRIANGLES){
-        process_batch = process_triangles;
+        be_process_func = process_triangles;
         batch_size = TRIANGLES_BATCH_SIZE * 3;
     }else{
-        current_primitive = NO_PRIMITIVE;
-        set_error(ER_INVALID_ENUM);
-        return;
+        be_process_func = NULL;
+        return ER_INVALID_ARGUMENT;
     }
-    //Set current primitive
-    current_primitive = primitive;
+    return ER_NO_ERROR;
 }
 
 void er_end(){
-    if(input_buffer_size > 0){
-        process_batch();
+    if(be_process_func != NULL && input_buffer_size > 0){
+        be_process_func();
     }
-    current_primitive = NO_PRIMITIVE;
+    be_process_func = NULL;
 }
 
 void er_normal3f(float nx, float ny, float nz){
@@ -346,14 +323,15 @@ void er_normal3f(float nx, float ny, float nz){
     current_normal[VAR_Z] = nz;
 }
 
-void er_normal3fv(float *normal){
+er_StatusEnum er_normal3fv(float *normal){
     if(normal != NULL){
         current_normal[VAR_X] = normal[VAR_X];
         current_normal[VAR_Y] = normal[VAR_Y];
         current_normal[VAR_Z] = normal[VAR_Z];
     }else{
-        set_error(ER_NULL_POINTER);
+        return ER_NULL_POINTER;
     }
+    return ER_NO_ERROR;
 }
 
 void er_color3f(float r, float g, float b){
@@ -363,15 +341,16 @@ void er_color3f(float r, float g, float b){
     current_color[VAR_A] = 1.0f;
 }
 
-void er_color3fv(float *color){
+er_StatusEnum er_color3fv(float *color){
     if(color != NULL){
         current_color[VAR_R] = color[VAR_R];
         current_color[VAR_G] = color[VAR_G];
         current_color[VAR_B] = color[VAR_B];
         current_color[VAR_A] = 1.0f;
     }else{
-        set_error(ER_NULL_POINTER);
+        return ER_NULL_POINTER;
     }
+    return ER_NO_ERROR;
 }
 
 void er_color4f(float r, float g, float b, float a){
@@ -381,15 +360,16 @@ void er_color4f(float r, float g, float b, float a){
     current_color[VAR_A] = a;
 }
 
-void er_color4fv(float *color){
+er_StatusEnum er_color4fv(float *color){
     if(color != NULL){
         current_color[VAR_R] = color[VAR_R];
         current_color[VAR_G] = color[VAR_G];
         current_color[VAR_B] = color[VAR_B];
         current_color[VAR_A] = color[VAR_A];
     }else{
-        set_error(ER_NULL_POINTER);
+        return ER_NULL_POINTER;
     }
+    return ER_NO_ERROR;
 }
 
 void er_tex_coord1f(float s){
@@ -399,15 +379,16 @@ void er_tex_coord1f(float s){
     current_tex_coord[VAR_Q] = 1.0f;
 }
 
-void er_tex_coord1fv(float *tex_coord){
+er_StatusEnum er_tex_coord1fv(float *tex_coord){
     if(tex_coord != NULL){
         current_tex_coord[VAR_S] = tex_coord[VAR_S];
         current_tex_coord[VAR_T] = 0.0f;
         current_tex_coord[VAR_P] = 0.0f;
         current_tex_coord[VAR_Q] = 1.0f;
     }else{
-        set_error(ER_NULL_POINTER);
+        return ER_NULL_POINTER;
     }
+    return ER_NO_ERROR;
 }
 
 void er_tex_coord2f(float s, float t){
@@ -417,15 +398,16 @@ void er_tex_coord2f(float s, float t){
     current_tex_coord[VAR_Q] = 1.0f;
 }
 
-void er_tex_coord2fv(float *tex_coord){
+er_StatusEnum er_tex_coord2fv(float *tex_coord){
     if(tex_coord != NULL){
         current_tex_coord[VAR_S] = tex_coord[VAR_S];
         current_tex_coord[VAR_T] = tex_coord[VAR_T];
         current_tex_coord[VAR_P] = 0.0f;
         current_tex_coord[VAR_Q] = 1.0f;
     }else{
-        set_error(ER_NULL_POINTER);
+        return ER_NULL_POINTER;
     }
+    return ER_NO_ERROR;
 }
 
 void er_tex_coord3f(float s, float t, float r){
@@ -435,15 +417,16 @@ void er_tex_coord3f(float s, float t, float r){
     current_tex_coord[VAR_Q] = 1.0f;
 }
 
-void er_tex_coord3fv(float *tex_coord){
+er_StatusEnum er_tex_coord3fv(float *tex_coord){
     if(tex_coord != NULL){
         current_tex_coord[VAR_S] = tex_coord[VAR_S];
         current_tex_coord[VAR_T] = tex_coord[VAR_T];
         current_tex_coord[VAR_P] = tex_coord[VAR_P];
         current_tex_coord[VAR_Q] = 1.0f;
     }else{
-        set_error(ER_NULL_POINTER);
+        return ER_NULL_POINTER;
     }
+    return ER_NO_ERROR;
 }
 
 void er_tex_coord4f(float s, float t, float r, float q){
@@ -453,56 +436,64 @@ void er_tex_coord4f(float s, float t, float r, float q){
     current_tex_coord[VAR_Q] = q;
 }
 
-void er_tex_coord4fv(float *tex_coord){
+er_StatusEnum er_tex_coord4fv(float *tex_coord){
     if(tex_coord != NULL){
         current_tex_coord[VAR_S] = tex_coord[VAR_S];
         current_tex_coord[VAR_T] = tex_coord[VAR_T];
         current_tex_coord[VAR_P] = tex_coord[VAR_P];
         current_tex_coord[VAR_Q] = tex_coord[VAR_Q];
     }else{
-        set_error(ER_NULL_POINTER);
+        return ER_NULL_POINTER;
     }
+    return ER_NO_ERROR;
 }
 
 void er_fog_coordf(float fog_coord){
     current_fog_coord = fog_coord;
 }
 
-void er_fog_coordfv(float *fog_coord){
+er_StatusEnum er_fog_coordfv(float *fog_coord){
     if(fog_coord != NULL){
         current_fog_coord = *fog_coord;
     }else{
-        set_error(ER_NULL_POINTER);
+        return ER_NULL_POINTER;
     }
+    return ER_NO_ERROR;
 }
 
 void er_vertex2f(float x, float y){
     er_vertex4f(x, y, 0.0f, 1.0f);
 }
 
-void er_vertex2fv(float *point){
+er_StatusEnum er_vertex2fv(float *point){
     if(point != NULL){
         er_vertex4f(point[VAR_X], point[VAR_Y], 0.0f, 1.0f);
     }else{
-        set_error(ER_NULL_POINTER);
+        return ER_NULL_POINTER;
     }
+    return ER_NO_ERROR;
 }
 
 void er_vertex3f(float x, float y, float z){
     er_vertex4f(x, y, z, 1.0f);
 }
 
-void er_vertex3fv(float *point){
+er_StatusEnum er_vertex3fv(float *point){
     if(point != NULL){
         er_vertex4f(point[VAR_X], point[VAR_Y], point[VAR_Z], 1.0f);
     }else{
-        set_error(ER_NULL_POINTER);
+        return ER_NULL_POINTER;
     }
+    return ER_NO_ERROR;
 }
 
 void er_vertex4f(float x, float y, float z, float w){
 
-    struct vertex_input* vertex;
+    if(be_process_func == NULL) {
+        return;
+    }
+
+    er_VertexInput* vertex;
     unsigned int output_index;
 
     /* Get index of new vertex on input buffer*/
@@ -530,59 +521,56 @@ void er_vertex4f(float x, float y, float z, float w){
 
     /* Verify batch size and process geometry */
     if(input_buffer_size >= batch_size){
-        process_batch();
+        be_process_func();
     }
 
 }
 
-void er_vertex4fv(float *point){
+er_StatusEnum er_vertex4fv(float *point){
     if(point != NULL){
         er_vertex4f(point[VAR_X], point[VAR_Y], point[VAR_Z], point[VAR_W]);
     }else{
-        set_error(ER_NULL_POINTER);
+        return ER_NULL_POINTER;
     }
+    return ER_NO_ERROR;
 }
 
-void er_draw_elements(unsigned int primitive, unsigned int indices_size, unsigned int *index){
+er_StatusEnum er_draw_elements(er_PrimitiveEnum primitive, unsigned int indices_size, unsigned int *index){
 
     if(current_program == NULL){
-        set_error(ER_NO_PROGRAM_LOADED);
+        return ER_NO_PROGRAM_SET;
     }
     if(current_vertex_array == NULL){
-        set_error(ER_INVALID_OPERATION);
-        return;
+        return ER_NO_VERTEX_ARRAY_SET;
     }
     if(indices_size == 0){
-        set_error(ER_OUT_OF_RANGE);
-        return;
+        return ER_INVALID_ARGUMENT;
     }
     if(index == NULL){
-        set_error(ER_NULL_POINTER);
-        return;
+        return ER_INVALID_ARGUMENT;
     }
     if(primitive != ER_POINTS && primitive != ER_LINES && primitive != ER_TRIANGLES){
-        set_error(ER_INVALID_ENUM);
-        return;
+        return ER_INVALID_ARGUMENT;
     }
 
     update_matrix_data();
     update_uniform_vars();
     reset_buffers_size();
+    be_process_func = NULL;
 
     unsigned int output_index, i, b, begin, end, batch_number, batch_size;
-    void (*process_batch)(void) = NULL;
+    void (*process_func)(void) = NULL;
 
     if(primitive == ER_POINTS){
         batch_size = POINTS_BATCH_SIZE;
-        process_batch = process_points;
+        process_func = process_points;
     }else if(primitive == ER_LINES){
         batch_size = LINES_BATCH_SIZE * 2;
-        process_batch = process_lines;
+        process_func = process_lines;
     }else if(primitive == ER_TRIANGLES){
         batch_size = TRIANGLES_BATCH_SIZE * 3;
-        process_batch = process_triangles;
+        process_func = process_triangles;
     }
-    current_primitive = primitive;
 
     batch_number = indices_size / batch_size;
 
@@ -601,7 +589,7 @@ void er_draw_elements(unsigned int primitive, unsigned int indices_size, unsigne
             input_indices[input_indices_size++] = output_index;
         }
         /* Process batch of primitives */
-        process_batch();
+        process_func();
     }
 
     if(indices_size > batch_number * batch_size){
@@ -619,47 +607,46 @@ void er_draw_elements(unsigned int primitive, unsigned int indices_size, unsigne
             input_indices[input_indices_size++] = output_index;
         }
         /* Process batch of primitives */
-        process_batch();
+        process_func();
     }
+
+    return ER_NO_ERROR;
 
 }
 
-void er_draw_arrays(unsigned int primitive, unsigned int first, unsigned int count){
+er_StatusEnum er_draw_arrays(er_PrimitiveEnum primitive, unsigned int first, unsigned int count){
 
     if(current_program == NULL){
-        set_error(ER_NO_PROGRAM_LOADED);
+        return ER_NO_PROGRAM_SET;
     }
     if(current_vertex_array == NULL){
-        set_error(ER_INVALID_OPERATION);
-        return;
+        return ER_INVALID_ARGUMENT;
     }
     if(count == 0){
-        set_error(ER_OUT_OF_RANGE);
-        return;
+        return ER_INVALID_ARGUMENT;
     }
     if(primitive != ER_POINTS && primitive != ER_LINES && primitive != ER_TRIANGLES){
-        set_error(ER_INVALID_ENUM);
-        return;
+        return ER_INVALID_ARGUMENT;
     }
 
     update_matrix_data();
     update_uniform_vars();
     reset_buffers_size();
+    be_process_func = NULL;
 
     unsigned int output_index, i, b, begin, end, batch_number, batch_size;
-    void (*process_batch)(void) = NULL;
+    void (*process_func)(void) = NULL;
 
     if(primitive == ER_POINTS){
         batch_size = POINTS_BATCH_SIZE;
-        process_batch = process_points;
+        process_func = process_points;
     }else if(primitive == ER_LINES){
         batch_size = LINES_BATCH_SIZE * 2;
-        process_batch = process_lines;
+        process_func = process_lines;
     }else if(primitive == ER_TRIANGLES){
         batch_size = TRIANGLES_BATCH_SIZE * 3;
-        process_batch = process_triangles;
+        process_func = process_triangles;
     }
-    current_primitive = primitive;
 
     batch_number = count / batch_size;
 
@@ -673,7 +660,7 @@ void er_draw_arrays(unsigned int primitive, unsigned int first, unsigned int cou
             input_indices[input_indices_size++] = output_index;
         }
         /* Process batch of primitives */
-        process_batch();
+        process_func();
     }
 
     if(count > batch_number * batch_size){
@@ -686,12 +673,12 @@ void er_draw_arrays(unsigned int primitive, unsigned int first, unsigned int cou
             input_indices[input_indices_size++] = output_index;
         }
         /* Process batch of primitives */
-        process_batch();
+        process_func();
     }
-
+    return ER_NO_ERROR;
 }
 
-void post_clipping_operations(struct vertex_output *vertex){
+void post_clipping_operations(er_VertexOutput *vertex){
 
     /* Homogeneous division  */
     if(current_program->homogeneous_division != NULL){
@@ -699,8 +686,8 @@ void post_clipping_operations(struct vertex_output *vertex){
     }
 
     /* Window to viewport transformation, and conversion of additional parameters */
-    vertex->position[VAR_X] = - 0.5f + ( WINDOW_WIDTH - 0.001f) * ( vertex->position[VAR_X] + 1.0f ) / 2.0f;
-    vertex->position[VAR_Y] = - 0.5f + ( WINDOW_HEIGHT - 0.001f) * ( vertex->position[VAR_Y] + 1.0f ) / 2.0f;
+    vertex->position[VAR_X] = - 0.5f + ( window_width - 0.001f) * ( vertex->position[VAR_X] + 1.0f ) / 2.0f;
+    vertex->position[VAR_Y] = - 0.5f + ( window_height - 0.001f) * ( vertex->position[VAR_Y] + 1.0f ) / 2.0f;
     vertex->position[VAR_Z] = ( -vertex->position[VAR_Z] + 1.0f) / 2.0f;
 
 }
@@ -819,9 +806,9 @@ void process_triangles(){
             output_buffer[ output_indices[i] ].processed = ER_TRUE;
         }
     }
-    struct vertex_output *vertex0;
-    struct vertex_output *vertex1;
-    struct vertex_output *vertex2;
+    er_VertexOutput *vertex0;
+    er_VertexOutput *vertex1;
+    er_VertexOutput *vertex2;
     float triangle_area = 0.0f;
     unsigned int orientation, face;
 

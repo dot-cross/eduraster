@@ -16,15 +16,15 @@ static SDL_Window *window = NULL;
 static SDL_Renderer *renderer = NULL;
 static SDL_Texture *screen_texture = NULL;
 /* Textures */
-static struct texture *texture_px = NULL;
-static struct texture *texture_nx = NULL;
-static struct texture *texture_py = NULL;
-static struct texture *texture_ny = NULL;
-static struct texture *texture_pz = NULL;
-static struct texture *texture_nz = NULL;
-static struct texture *texture_cubemap = NULL;
+static er_Texture *texture_px = NULL;
+static er_Texture *texture_nx = NULL;
+static er_Texture *texture_py = NULL;
+static er_Texture *texture_ny = NULL;
+static er_Texture *texture_pz = NULL;
+static er_Texture *texture_nz = NULL;
+static er_Texture *texture_cubemap = NULL;
 /* Vertex and index data */
-static struct vertex_array* va = NULL;
+static er_VertexArray* va = NULL;
 static unsigned int index_size;
 static float *points = NULL;
 static unsigned int *index_data = NULL;
@@ -32,8 +32,8 @@ static unsigned int *index_data = NULL;
 static unsigned int *color_buffer = NULL;
 static float *depth_buffer = NULL;
 /* Programs */
-static struct program *prog_torus = NULL;
-static struct program *prog_skybox = NULL;
+static er_Program *prog_torus = NULL;
+static er_Program *prog_skybox = NULL;
 /* Scene settings */
 enum fill_mode {wireframe = 0, solid = 1};
 enum fill_mode wireframe_flag = solid;
@@ -328,7 +328,7 @@ static void display() {
 /*
 * Vertex shader for skybox.
 */
-static void skybox_vs(struct vertex_input *input, struct vertex_output *output, struct uniform_variables *vars){
+static void skybox_vs(er_VertexInput *input, er_VertexOutput *output, er_UniVars *vars){
     multd_mat4_vec4(vars->modelview_projection, input->position, output->position);
     output->attributes[0] = input->tex_coord[VAR_S];
     output->attributes[1] = input->tex_coord[VAR_T];
@@ -337,7 +337,7 @@ static void skybox_vs(struct vertex_input *input, struct vertex_output *output, 
 /*
 * Homogeneous division for skybox.
 */
-static void skybox_hd(struct vertex_output *vertex){
+static void skybox_hd(er_VertexOutput *vertex){
     vertex->position[VAR_X] = vertex->position[VAR_X] / vertex->position[VAR_W];
     vertex->position[VAR_Y] = vertex->position[VAR_Y] / vertex->position[VAR_W];
     vertex->position[VAR_Z] = vertex->position[VAR_Z] / vertex->position[VAR_W];
@@ -349,16 +349,16 @@ static void skybox_hd(struct vertex_output *vertex){
 /*
 * Fragment shader for skybox.
 */
-static void skybox_fs(int y, int x, struct fragment_input *input, struct uniform_variables *vars){
+static void skybox_fs(int y, int x, er_FragInput *input, er_UniVars *vars){
     if(input->frag_coord[VAR_Z] >= read_depth(y, x)){
         return;
     }
-    struct texture* tex = vars->uniform_texture[0];
+    er_Texture* tex = vars->uniform_texture[0];
     vec2 tex_coord;
     vec4 tex_color;
     tex_coord[VAR_S] = input->attributes[0] / input->frag_coord[VAR_W];
     tex_coord[VAR_T] = input->attributes[1] / input->frag_coord[VAR_W];
-    texture_lod(tex, tex_coord, 0, tex_color);
+    er_texture_lod(tex, tex_coord, 0, tex_color);
     write_color(y, x, tex_color[0], tex_color[1], tex_color[2], 1.0f);
     write_depth(y, x, input->frag_coord[VAR_Z]);
 }
@@ -366,7 +366,7 @@ static void skybox_fs(int y, int x, struct fragment_input *input, struct uniform
 /*
 * Vertex shader for torus.
 */
-void torus_vs(struct vertex_input *input, struct vertex_output *output, struct uniform_variables *vars){
+void torus_vs(er_VertexInput *input, er_VertexOutput *output, er_UniVars *vars){
     multd_mat4_vec4(vars->modelview_projection, input->position, output->position);
     output->attributes[0] = input->normal[VAR_X];
     output->attributes[1] = input->normal[VAR_Y];
@@ -376,7 +376,7 @@ void torus_vs(struct vertex_input *input, struct vertex_output *output, struct u
 /*
 * Homogeneous division for torus.
 */
-void torus_hd(struct vertex_output *vertex){
+void torus_hd(er_VertexOutput *vertex){
     vertex->position[VAR_X] = vertex->position[VAR_X] / vertex->position[VAR_W];
     vertex->position[VAR_Y] = vertex->position[VAR_Y] / vertex->position[VAR_W];
     vertex->position[VAR_Z] = vertex->position[VAR_Z] / vertex->position[VAR_W];
@@ -389,18 +389,18 @@ void torus_hd(struct vertex_output *vertex){
 /*
 * Fragment shader for torus.
 */
-void torus_fs(int y, int x, struct fragment_input *input, struct uniform_variables *vars){
+void torus_fs(int y, int x, er_FragInput *input, er_UniVars *vars){
     if(input->frag_coord[VAR_Z] >= read_depth(y, x)){
         return;
     }
-    struct texture *tex = vars->uniform_texture[0];
+    er_Texture *tex = vars->uniform_texture[0];
     vec3 tex_coord;
     vec4 tex_color;
     tex_coord[VAR_S] = input->attributes[0];
     tex_coord[VAR_T] = input->attributes[1];
     tex_coord[VAR_P] = input->attributes[2];
     //texture_lod(texture_id, tex_coord, 0.0f, tex_color);
-    texture_grad(tex, tex_coord, &(input->ddx[0]), &(input->ddy[0]), tex_color);
+    er_texture_grad(tex, tex_coord, &(input->ddx[0]), &(input->ddy[0]), tex_color);
     write_color(y, x, tex_color[0], tex_color[1], tex_color[2], 1.0f);
     write_depth(y, x, input->frag_coord[VAR_Z]);
 }
@@ -430,11 +430,12 @@ static SDL_Surface* load_image(const char *image_name){
 /*
 * Convert and copy pixel data from SDL surface to eduraster texture.
 */
-static void set_texture_data(unsigned int tex_target, struct texture *tex, SDL_Surface *image){
+static void set_texture_data(er_TextureTargetEnum tex_target, er_Texture *tex, SDL_Surface *image){
     SDL_PixelFormat *format = image->format;
     SDL_LockSurface(image);
     unsigned char* src_data = image->pixels;
-    float* dst_data = er_texture_ptr(tex, tex_target, 0);
+    float* dst_data = NULL;
+    er_texture_ptr(tex, tex_target, 0, &dst_data);
     unsigned int src_color;
     unsigned char r, g, b;
     int i, j;
@@ -522,8 +523,8 @@ static void setup(){
         }
     }
     /* Init EduRaster */
-    if(er_init() != 0) {
-        fprintf(stderr, "Unable to init eduraster: %s\n", er_get_error_string(er_get_error()));
+    if(er_init() != ER_NO_ERROR) {
+        fprintf(stderr, "Unable to init eduraster\n");
         quit();
     }
     er_viewport(0, 0, window_width, window_height);
@@ -536,7 +537,7 @@ static void setup(){
     /* Create vertex array for torus */
     va = er_create_vertex_array();
     if(va == NULL){
-        fprintf(stderr, "Unable to create vertex array: %s\n", er_get_error_string(er_get_error()));
+        fprintf(stderr, "Unable to create vertex array\n");
         quit();
     }
     er_use_vertex_array(va);
@@ -549,9 +550,9 @@ static void setup(){
 
     /* Create textures for skybox and load texture data */
     /* Positive X */
-    texture_px = er_create_texture2D(image_px->w, image_px->h, ER_RGB32F);
-    if(texture_px == NULL){
-        fprintf(stderr, "Unable to create texture: %s\n", er_get_error_string(er_get_error()));
+    er_StatusEnum status = er_create_texture2D(&texture_px, image_px->w, image_px->h, ER_RGB32F);
+    if(status != ER_NO_ERROR || texture_px == NULL){
+        fprintf(stderr, "Unable to create texture %s\n", er_status_string(status));
         quit();
     }
     er_texture_filtering(texture_px, ER_MAGNIFICATION_FILTER, ER_LINEAR);
@@ -560,9 +561,9 @@ static void setup(){
     er_texture_wrap_mode(texture_px, ER_WRAP_T, ER_CLAMP_TO_EDGE);
     set_texture_data(ER_TEXTURE_2D, texture_px, image_px);
     /* Negative X */
-    texture_nx = er_create_texture2D(image_nx->w, image_nx->h, ER_RGB32F);
-    if(texture_nx == NULL){
-        fprintf(stderr, "Unable to create texture: %s\n", er_get_error_string(er_get_error()));
+    status = er_create_texture2D(&texture_nx,image_nx->w, image_nx->h, ER_RGB32F);
+    if(status != ER_NO_ERROR || texture_nx == NULL){
+        fprintf(stderr, "Unable to create texture %s\n", er_status_string(status));
         quit();
     }
     er_texture_filtering(texture_nx, ER_MAGNIFICATION_FILTER, ER_LINEAR);
@@ -571,9 +572,9 @@ static void setup(){
     er_texture_wrap_mode(texture_nx, ER_WRAP_T, ER_CLAMP_TO_EDGE);
     set_texture_data(ER_TEXTURE_2D, texture_nx, image_nx);
     /* Positive Y */
-    texture_py = er_create_texture2D(image_py->w, image_py->h, ER_RGB32F);
-    if(texture_py == NULL){
-        fprintf(stderr, "Unable to create texture: %s\n", er_get_error_string(er_get_error()));
+    status = er_create_texture2D(&texture_py, image_py->w, image_py->h, ER_RGB32F);
+    if(status != ER_NO_ERROR || texture_py == NULL){
+        fprintf(stderr, "Unable to create texture: %s\n", er_status_string(status));
         quit();
     }
     er_texture_filtering(texture_py, ER_MAGNIFICATION_FILTER, ER_LINEAR);
@@ -582,9 +583,9 @@ static void setup(){
     er_texture_wrap_mode(texture_py, ER_WRAP_T, ER_CLAMP_TO_EDGE);
     set_texture_data(ER_TEXTURE_2D, texture_py, image_py);
     /* Negative Y */
-    texture_ny = er_create_texture2D(image_ny->w, image_ny->h, ER_RGB32F);
-    if(texture_ny == NULL){
-        fprintf(stderr, "Unable to create texture: %s\n", er_get_error_string(er_get_error()));
+    status = er_create_texture2D(&texture_ny, image_ny->w, image_ny->h, ER_RGB32F);
+    if(status != ER_NO_ERROR || texture_ny == NULL){
+        fprintf(stderr, "Unable to create texture: %s\n", er_status_string(status));
         quit();
     }
     er_texture_filtering(texture_ny, ER_MAGNIFICATION_FILTER, ER_LINEAR);
@@ -593,9 +594,9 @@ static void setup(){
     er_texture_wrap_mode(texture_ny, ER_WRAP_T, ER_CLAMP_TO_EDGE);
     set_texture_data(ER_TEXTURE_2D, texture_ny, image_ny);
     /* Positive Z */
-    texture_pz = er_create_texture2D(image_pz->w, image_pz->h, ER_RGB32F);
-    if(texture_pz == NULL){
-        fprintf(stderr, "Unable to create texture: %s\n", er_get_error_string(er_get_error()));
+    status = er_create_texture2D(&texture_pz, image_pz->w, image_pz->h, ER_RGB32F);
+    if(status != ER_NO_ERROR || texture_pz == NULL){
+        fprintf(stderr, "Unable to create texture: %s\n", er_status_string(status));
         quit();
     }
     er_texture_filtering(texture_pz, ER_MAGNIFICATION_FILTER, ER_LINEAR);
@@ -604,9 +605,9 @@ static void setup(){
     er_texture_wrap_mode(texture_pz, ER_WRAP_T, ER_CLAMP_TO_EDGE);
     set_texture_data(ER_TEXTURE_2D, texture_pz, image_pz);
     /* Negative Z */
-    texture_nz = er_create_texture2D(image_nz->w, image_nz->h, ER_RGB32F);
-    if(texture_nz == NULL){
-        fprintf(stderr, "Unable to create texture: %s\n", er_get_error_string(er_get_error()));
+    status = er_create_texture2D(&texture_nz, image_nz->w, image_nz->h, ER_RGB32F);
+    if(status != ER_NO_ERROR || texture_nz == NULL){
+        fprintf(stderr, "Unable to create texture: %s\n", er_status_string(status));
         quit();
     }
     er_texture_filtering(texture_nz, ER_MAGNIFICATION_FILTER, ER_LINEAR);
@@ -615,9 +616,9 @@ static void setup(){
     er_texture_wrap_mode(texture_nz, ER_WRAP_T, ER_CLAMP_TO_EDGE);
     set_texture_data(ER_TEXTURE_2D, texture_nz, image_nz);
     /* Create texture for environment map */
-    texture_cubemap = er_create_texture_cubemap(image_px->w, ER_RGB32F);
-    if(texture_cubemap == NULL){
-        fprintf(stderr, "Unable to create texture: %s\n", er_get_error_string(er_get_error()));
+    status = er_create_texture_cubemap(&texture_cubemap, image_px->w, ER_RGB32F);
+    if(status != ER_NO_ERROR || texture_cubemap == NULL){
+        fprintf(stderr, "Unable to create texture: %s\n", er_status_string(status));
         quit();
     }
     er_texture_filtering(texture_cubemap, ER_MAGNIFICATION_FILTER, ER_LINEAR);
@@ -632,10 +633,9 @@ static void setup(){
     set_texture_data(ER_TEXTURE_CUBE_MAP_NEGATIVE_Y, texture_cubemap, image_ny);
     set_texture_data(ER_TEXTURE_CUBE_MAP_POSITIVE_Z, texture_cubemap, image_pz);
     set_texture_data(ER_TEXTURE_CUBE_MAP_NEGATIVE_Z, texture_cubemap, image_nz);
-    er_generate_mipmaps(texture_cubemap);
-    int error = er_get_error();
-    if(error != ER_NO_ERROR){
-        fprintf(stderr, "%s\n",er_get_error_string(error));
+    status = er_generate_mipmaps(texture_cubemap);
+    if(status != ER_NO_ERROR){
+        fprintf(stderr, "Couldn't generate mipmaps: %s\n", er_status_string(status));
         quit();
     }
     SDL_FreeSurface(image_px);
@@ -647,7 +647,7 @@ static void setup(){
     /* Create program for torus */
     prog_torus = er_create_program();
     if(prog_torus == NULL){
-        fprintf(stderr, "Unable to create eduraster program: %s\n", er_get_error_string(er_get_error()));
+        fprintf(stderr, "Unable to create eduraster program\n");
         quit();
     }
     er_use_program(prog_torus);
@@ -659,7 +659,7 @@ static void setup(){
     /* Create program for skybox */
     prog_skybox = er_create_program();
     if(prog_skybox == NULL){
-        fprintf(stderr, "Unable to create eduraster program: %s\n", er_get_error_string(er_get_error()));
+        fprintf(stderr, "Unable to create eduraster program\n");
         quit();
     }
     er_use_program(prog_skybox);

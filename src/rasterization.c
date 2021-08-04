@@ -1,14 +1,14 @@
 #include "pipeline.h"
 
-struct edge{
+typedef struct Edge{
     float x, z, w;
     float attributes[ATTRIBUTES_SIZE];
     float attributes_step[ATTRIBUTES_SIZE];
     float step_x, step_z, step_w;
     int start_y, end_y;
-};
+} Edge;
 
-void draw_point_sprite(struct vertex_output *vertex, unsigned int face){
+void draw_point_sprite(er_VertexOutput *vertex, er_PolygonFaceEnum face){
 
     float half_size = 0.5f * vertex->point_size;
     int start_x, end_x;
@@ -16,23 +16,23 @@ void draw_point_sprite(struct vertex_output *vertex, unsigned int face){
     int i,j;
 
     start_x = (int)ceil( vertex->position[VAR_X] - half_size );
-    if(start_x < (int)WINDOW_ORIGIN_X){
-        start_x = WINDOW_ORIGIN_X;
+    if(start_x < (int)window_origin_x){
+        start_x = window_origin_x;
     }
     end_x = (int)ceil( vertex->position[VAR_X] + half_size ) - 1;
-    if(end_x >= (int)WINDOW_WIDTH){
-        end_x = WINDOW_WIDTH - 1;
+    if(end_x >= (int)window_width){
+        end_x = window_width - 1;
     }
     start_y = (int)ceil( vertex->position[VAR_Y] - half_size );
-    if(start_y < (int)WINDOW_ORIGIN_Y){
-        start_y = WINDOW_ORIGIN_Y;
+    if(start_y < (int)window_origin_y){
+        start_y = window_origin_y;
     }
     end_y = (int)ceil( vertex->position[VAR_Y] + half_size ) - 1;
-    if(end_y >= (int)WINDOW_HEIGHT){
-        end_y = WINDOW_HEIGHT - 1;
+    if(end_y >= (int)window_height){
+        end_y = window_height - 1;
     }
 
-    struct fragment_input input;
+    er_FragInput input;
     input.frag_coord[VAR_Z] = vertex->position[VAR_Z];
     input.frag_coord[VAR_W] = vertex->position[VAR_W];
     input.front_facing = (face == ER_FRONT) ? ER_TRUE: ER_FALSE;
@@ -77,7 +77,7 @@ void draw_point_sprite(struct vertex_output *vertex, unsigned int face){
 
 }
 
-void draw_point(struct vertex_output *vertex, unsigned int face){
+void draw_point(er_VertexOutput *vertex, er_PolygonFaceEnum face){
 
     float half_size = vertex->point_size / 2.0f;
     int start_x, end_x;
@@ -85,23 +85,23 @@ void draw_point(struct vertex_output *vertex, unsigned int face){
     int i,j;
 
     start_x = (int)ceil( vertex->position[VAR_X] - half_size );
-    if(start_x < (int)WINDOW_ORIGIN_X){
-        start_x = WINDOW_ORIGIN_X;
+    if(start_x < (int)window_origin_x){
+        start_x = window_origin_x;
     }
     end_x = (int)ceil( vertex->position[VAR_X] + half_size ) - 1;
-    if(end_x >= (int)WINDOW_WIDTH){
-        end_x = WINDOW_WIDTH - 1;
+    if(end_x >= (int)window_width){
+        end_x = window_width - 1;
     }
     start_y = (int)ceil( vertex->position[VAR_Y] - half_size );
-    if(start_y < (int)WINDOW_ORIGIN_Y){
-        start_y = WINDOW_ORIGIN_Y;
+    if(start_y < (int)window_origin_y){
+        start_y = window_origin_y;
     }
     end_y = (int)ceil( vertex->position[VAR_Y] + half_size ) - 1;
-    if(end_y >= (int)WINDOW_HEIGHT){
-        end_y = WINDOW_HEIGHT - 1;
+    if(end_y >= (int)window_height){
+        end_y = window_height - 1;
     }
 
-    struct fragment_input input;
+    er_FragInput input;
     input.frag_coord[VAR_Z] = vertex->position[VAR_Z];
     input.frag_coord[VAR_W] = vertex->position[VAR_W];
     input.front_facing = (face == ER_FRONT) ? ER_TRUE: ER_FALSE;
@@ -126,9 +126,9 @@ void draw_point(struct vertex_output *vertex, unsigned int face){
 
 }
 
-static void draw_vertical_negative(struct vertex_output *vertex0, struct vertex_output *vertex1, unsigned int face){
+static void draw_vertical_negative(er_VertexOutput *vertex0, er_VertexOutput *vertex1, er_PolygonFaceEnum face){
 
-    struct fragment_input input;
+    er_FragInput input;
     float delta_z, delta_w;
     float delta[ATTRIBUTES_SIZE];
     float t_S, t;
@@ -190,9 +190,9 @@ static void draw_vertical_negative(struct vertex_output *vertex0, struct vertex_
 
 }
 
-static void draw_vertical_positive(struct vertex_output *vertex0, struct vertex_output *vertex1, unsigned int face){
+static void draw_vertical_positive(er_VertexOutput *vertex0, er_VertexOutput *vertex1, er_PolygonFaceEnum face){
 
-    struct fragment_input input;
+    er_FragInput input;
     float delta_z, delta_w;
     float delta[ATTRIBUTES_SIZE];
     float t_N, t;
@@ -254,9 +254,9 @@ static void draw_vertical_positive(struct vertex_output *vertex0, struct vertex_
 
 }
 
-static void draw_horizontal_negative(struct vertex_output *vertex0, struct vertex_output *vertex1, unsigned int face){
+static void draw_horizontal_negative(er_VertexOutput *vertex0, er_VertexOutput *vertex1, er_PolygonFaceEnum face){
 
-    struct fragment_input input;
+    er_FragInput input;
     float delta_z, delta_w;
     float delta[ATTRIBUTES_SIZE];
     float t_W, t;
@@ -318,9 +318,9 @@ static void draw_horizontal_negative(struct vertex_output *vertex0, struct verte
 
 }
 
-static void draw_horizontal_positive(struct vertex_output *vertex0, struct vertex_output *vertex1, unsigned int face){
+static void draw_horizontal_positive(er_VertexOutput *vertex0, er_VertexOutput *vertex1, er_PolygonFaceEnum face){
 
-    struct fragment_input input;
+    er_FragInput input;
     float delta_z, delta_w;
     float delta[ATTRIBUTES_SIZE];
     float t_E, t;
@@ -385,9 +385,9 @@ static void draw_horizontal_positive(struct vertex_output *vertex0, struct verte
 /*
  * Midpoint line algorithm, Octant 6
  */
-static void draw_line_case6(struct vertex_output *vertex0, struct vertex_output *vertex1, unsigned int face){
+static void draw_line_case6(er_VertexOutput *vertex0, er_VertexOutput *vertex1, er_PolygonFaceEnum face){
 
-    struct fragment_input input;
+    er_FragInput input;
     float delta_z, delta_w;
     float delta[ATTRIBUTES_SIZE];
     float t_S, t_SW, t;
@@ -466,9 +466,9 @@ static void draw_line_case6(struct vertex_output *vertex0, struct vertex_output 
 /*
  * Midpoint line algorithm, Octant 7
  */
-static void draw_line_case7(struct vertex_output *vertex0, struct vertex_output *vertex1, unsigned int face){
+static void draw_line_case7(er_VertexOutput *vertex0, er_VertexOutput *vertex1, er_PolygonFaceEnum face){
 
-    struct fragment_input input;
+    er_FragInput input;
     float delta_z, delta_w;
     float delta[ATTRIBUTES_SIZE];
     float t_S, t_SE, t;
@@ -547,9 +547,9 @@ static void draw_line_case7(struct vertex_output *vertex0, struct vertex_output 
 /*
  * Midpoint line algorithm, Octant 8
  */
-static void draw_line_case8(struct vertex_output *vertex0, struct vertex_output *vertex1, unsigned int face){
+static void draw_line_case8(er_VertexOutput *vertex0, er_VertexOutput *vertex1, er_PolygonFaceEnum face){
 
-    struct fragment_input input;
+    er_FragInput input;
     float delta_z, delta_w;
     float delta[ATTRIBUTES_SIZE];
     float t_E, t_SE, t;
@@ -628,9 +628,9 @@ static void draw_line_case8(struct vertex_output *vertex0, struct vertex_output 
 /*
  * Midpoint line algorithm, Octant 3
  */
-static void draw_line_case3(struct vertex_output *vertex0, struct vertex_output *vertex1, unsigned int face){
+static void draw_line_case3(er_VertexOutput *vertex0, er_VertexOutput *vertex1, er_PolygonFaceEnum face){
 
-    struct fragment_input input;
+    er_FragInput input;
     float delta_z, delta_w;
     float delta[ATTRIBUTES_SIZE];
     float t_N, t_NW, t;
@@ -709,9 +709,9 @@ static void draw_line_case3(struct vertex_output *vertex0, struct vertex_output 
 /*
  * Midpoint line algorithm, Octant 2
  */
-static void draw_line_case2(struct vertex_output *vertex0, struct vertex_output *vertex1, unsigned int face){
+static void draw_line_case2(er_VertexOutput *vertex0, er_VertexOutput *vertex1, er_PolygonFaceEnum face){
 
-    struct fragment_input input;
+    er_FragInput input;
     float delta_z, delta_w;
     float delta[ATTRIBUTES_SIZE];
     float t_N, t_NE, t;
@@ -790,9 +790,9 @@ static void draw_line_case2(struct vertex_output *vertex0, struct vertex_output 
 /*
  * Midpoint line algorithm, Octact 5
  */
-static void draw_line_case5(struct vertex_output *vertex0, struct vertex_output *vertex1, unsigned int face){
+static void draw_line_case5(er_VertexOutput *vertex0, er_VertexOutput *vertex1, er_PolygonFaceEnum face){
 
-    struct fragment_input input;
+    er_FragInput input;
     float delta_z, delta_w;
     float delta[ATTRIBUTES_SIZE];
     float t_W, t_SW, t;
@@ -871,9 +871,9 @@ static void draw_line_case5(struct vertex_output *vertex0, struct vertex_output 
 /*
  * Midpoint line algorithm, Octact 4
  */
-static void draw_line_case4(struct vertex_output *vertex0, struct vertex_output *vertex1, unsigned int face){
+static void draw_line_case4(er_VertexOutput *vertex0, er_VertexOutput *vertex1, er_PolygonFaceEnum face){
 
-    struct fragment_input input;
+    er_FragInput input;
     float delta_z, delta_w;
     float delta[ATTRIBUTES_SIZE];
     float t_W, t_NW, t;
@@ -952,9 +952,9 @@ static void draw_line_case4(struct vertex_output *vertex0, struct vertex_output 
 /*
  * Midpoint line algorithm, Octant 1
  */
-static void draw_line_case1(struct vertex_output *vertex0, struct vertex_output *vertex1, unsigned int face){
+static void draw_line_case1(er_VertexOutput *vertex0, er_VertexOutput *vertex1, er_PolygonFaceEnum face){
 
-    struct fragment_input input;
+    er_FragInput input;
     float delta_z, delta_w;
     float delta[ATTRIBUTES_SIZE];
     float t_E, t_NE, t;
@@ -1031,7 +1031,7 @@ static void draw_line_case1(struct vertex_output *vertex0, struct vertex_output 
 /*
  * Rasterization of lines.
 */
-void draw_line(struct vertex_output *vertex0, struct vertex_output *vertex1, unsigned int face){
+void draw_line(er_VertexOutput *vertex0, er_VertexOutput *vertex1, er_PolygonFaceEnum face){
 
     int x0, y0, x1, y1;
     x0 = uiround(vertex0->position[VAR_X]);
@@ -1081,7 +1081,7 @@ void draw_line(struct vertex_output *vertex0, struct vertex_output *vertex1, uns
 
 }
 
-static void init_left_edge(struct edge *t_edge, struct vertex_output *bottom, struct vertex_output *top){
+static void init_left_edge(Edge *t_edge, er_VertexOutput *bottom, er_VertexOutput *top){
 
     int start_y = ceil(bottom->position[VAR_Y]);
     int end_y = (int)ceil(top->position[VAR_Y]) - 1;
@@ -1108,7 +1108,7 @@ static void init_left_edge(struct edge *t_edge, struct vertex_output *bottom, st
 
 }
 
-static void init_right_edge(struct edge *t_edge, struct vertex_output *bottom, struct vertex_output *top){
+static void init_right_edge(Edge *t_edge, er_VertexOutput *bottom, er_VertexOutput *top){
 
     int start_y = ceil(bottom->position[VAR_Y]);
     int end_y = (int)ceil(top->position[VAR_Y]) - 1;
@@ -1127,12 +1127,12 @@ static void init_right_edge(struct edge *t_edge, struct vertex_output *bottom, s
  * Scan line conversion of a triangle given on CCW order. Generic interpolation of parameters.
  * Sampling on pixel centers, with subpixel precision and consistent bottom-left fill convention.
 */
-void draw_triangle(struct vertex_output *vertex0, struct vertex_output *vertex1, struct vertex_output *vertex2, unsigned int face){
+void draw_triangle(er_VertexOutput *vertex0, er_VertexOutput *vertex1, er_VertexOutput *vertex2, er_PolygonFaceEnum face){
 
-    struct edge bottom_to_top, bottom_to_middle, middle_to_top;
-    struct edge *left0, *right0;
-    struct edge *left1, *right1;
-    struct fragment_input input;
+    Edge bottom_to_top, bottom_to_middle, middle_to_top;
+    Edge *left0, *right0;
+    Edge *left1, *right1;
+    er_FragInput input;
 
     /* Calculate gradients */
     float dx10, dx20, dy10, dy20, dattrib10, dattrib20, a, b, one_over_c;

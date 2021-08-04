@@ -11,7 +11,7 @@
 #define rad_to_deg(rad) ((rad) * 180.0f / M_PI)
 #define max(a, b) ( (a) > (b) ? (a) : (b))
 #define min(a, b) ( (a) < (b) ? (a) : (b))
-#define uiround(x) (int)(x+0.5f)
+#define uiround(x) (unsigned int)(x+0.5f)
 #define iround(x) ( (x) > 0.0f ? (int)(x+0.5f): (int)(x-0.5f) )
 #define lerp(x, y, alpha) ( x + (alpha) * ( y - x ) )
 #define clamp(x, min, max) ( (x) < (min) ? (min) :  (x) > (max) ? (max) : (x) )
@@ -41,6 +41,14 @@ typedef float mat4[4][4];
 
 /*  VECTOR 2  */
 
+#define assign_vec2(dst, src) (dst)[0] = (src)[0]; (dst)[1] = (src)[1];
+
+#define add_vec2(vec0, vec1, out) (out)[0] = (vec0)[0] + (vec1)[1]; (out)[1] = (vec0)[1] + (vec1)[1];
+
+#define sub_vec2(vec0, vec1, out) (out)[0] = (vec0)[0] - (vec1)[1]; (out)[1] = (vec0)[1] - (vec1)[1];
+
+#define mult_vec2(k, vec, out) (out)[0] = (k) * (vec)[0]; (out)[1] = (k) * (vec)[1];
+
 #define dot_vec2(vec0, vec1) ( (vec0)[0] * (vec1)[0] + (vec0)[1] * (vec1)[1] )
 
 float length_vec2(vec2 vec);
@@ -54,6 +62,14 @@ void reflection_vec2(vec2 incident_vec, vec2 normal_vec, vec2 reflection_vec);
 void perp_vec2(vec2 vec, vec2 perp);
 
 /*  VECTOR 3  */
+
+#define assign_vec3(dst, src) (dst)[0] = (src)[0]; (dst)[1] = (src)[1]; (dst)[2] = (src)[2];
+
+#define add_vec3(vec0, vec1, out) (out)[0] = (vec0)[0] + (vec1)[1]; (out)[1] = (vec0)[1] + (vec1)[1]; (out)[2] = (vec0)[2] + (vec1)[2];
+
+#define sub_vec3(vec0, vec1, out) (out)[0] = (vec0)[0] - (vec1)[1]; (out)[1] = (vec0)[1] - (vec1)[1]; (out)[2] = (vec0)[2] - (vec1)[2];
+
+#define mult_vec3(k, vec, out) (out)[0] = (k) * (vec)[0]; (out)[1] = (k) * (vec)[1]; (out)[2] = (k) * (vec)[2];
 
 #define dot_vec3(vec0, vec1 ) ( (vec0)[0] * (vec1)[0] + (vec0)[1] * (vec1)[1] + (vec0)[2] * (vec1)[2] )
 
@@ -71,6 +87,14 @@ void perp_vec3(vec3 vec, vec3 perp);
 
 /*  VECTOR 4  */
 
+#define assign_vec4(dst, src) (dst)[0] = (src)[0]; (dst)[1] = (src)[1]; (dst)[2] = (src)[2]; (dst)[3] = (src)[3];
+
+#define add_vec4(vec0, vec1, out) (out)[0] = (vec0)[0] + (vec1)[1]; (out)[1] = (vec0)[1] + (vec1)[1]; (out)[2] = (vec0)[2] + (vec1)[2]; (out)[3] = (vec0)[3] + (vec1)[3];
+
+#define sub_vec4(vec0, vec1, out) (out)[0] = (vec0)[0] - (vec1)[1]; (out)[1] = (vec0)[1] - (vec1)[1]; (out)[2] = (vec0)[2] - (vec1)[2]; (out)[3] = (vec0)[3] - (vec1)[3];
+
+#define mult_vec4(k, vec, out) (out)[0] = (k) * (vec)[0]; (out)[1] = (k) * (vec)[1]; (out)[2] = (k) * (vec)[2]; (out)[3] = (k) * (vec)[3];
+
 #define dot_vec4(vec0, vec1 ) ( (vec0)[0] * (vec1)[0] + (vec0)[1] * (vec1)[1] + (vec0)[2] * (vec1)[2] + (vec0)[3] * (vec1)[3] )
 
 float length_vec4(vec4 vec);
@@ -85,6 +109,12 @@ void normalize_vec4(vec4 vec);
 void assign_mat2(mat2 dst, mat2 src);
 
 void assignT_mat2(mat2 dst, mat2 src);
+
+void add_mat2(mat2 mat0, mat2 mat1, mat2 out);
+
+void sub_mat2(mat2 mat0, mat2 mat1, mat2 out);
+
+void mult_k_mat2(float k, mat2 mat, mat2 out);
 
 void identity_mat2(mat2 mat);
 
@@ -114,6 +144,12 @@ void scale_dir_mat2(mat2 mat, float k, float x, float y);
 void assign_mat3(mat3 dst, mat3 src);
 
 void assignT_mat3(mat3 dst, mat3 src);
+
+void add_mat3(mat3 mat0, mat3 mat1, mat3 out);
+
+void sub_mat3(mat3 mat0, mat3 mat1, mat3 out);
+
+void mult_k_mat3(float k, mat3 mat, mat3 out);
 
 void identity_mat3(mat3 mat);
 
@@ -151,6 +187,12 @@ void scale_dir_mat3(mat3 mat, float k, float x, float y, float z);
 void assign_mat4(mat4 dst, mat4 src);
 
 void assignT_mat4(mat4 dst, mat4 src);
+
+void add_mat4(mat4 mat0, mat4 mat1, mat4 out);
+
+void sub_mat4(mat4 mat0, mat4 mat1, mat4 out);
+
+void mult_k_mat4(float k, mat4 mat, mat4 out);
 
 void identity_mat4(mat4 mat);
 

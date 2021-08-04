@@ -27,16 +27,16 @@ static struct expression *exp_z = NULL;
 static float min_t, max_t;
 static float min_s, max_s;
 static unsigned int samples_s, samples_t;
-static struct vertex_array *va = NULL;
+static struct er_VertexArray *va = NULL;
 static unsigned int index_size;
 static unsigned int *index_data = NULL;
 static float *points = NULL;
 static float *normals = NULL;
 /* Programs */
-static struct program *program_surface_light = NULL;
-static struct program *program_axis = NULL;
-static struct program *program_surface_color = NULL;
-static struct program *current_surface_program;
+static er_Program *program_surface_light = NULL;
+static er_Program *program_axis = NULL;
+static er_Program *program_surface_color = NULL;
+static er_Program *current_surface_program;
 /* Scene settings */
 static unsigned int light_enable = ER_TRUE;
 enum fill_mode wireframe_flag = solid;
@@ -337,7 +337,7 @@ static void display (void) {
 /*
 * Vertex shader for surface color based on surface normals.
 */
-static void vertex_shader_color(struct vertex_input *input, struct vertex_output *output, struct uniform_variables *vars){
+static void vertex_shader_color(er_VertexInput *input, er_VertexOutput *output, er_UniVars *vars){
     multd_mat4_vec4(vars->modelview_projection, input->position, output->position);
     output->attributes[0] = input->normal[VAR_X];
     output->attributes[1] = input->normal[VAR_Y];
@@ -347,7 +347,7 @@ static void vertex_shader_color(struct vertex_input *input, struct vertex_output
 /*
 * Homogeneous division for surface color based on surface normals.
 */
-static void homogeneous_division_color(struct vertex_output *vertex){
+static void homogeneous_division_color(er_VertexOutput *vertex){
     vertex->position[VAR_X] = vertex->position[VAR_X] / vertex->position[VAR_W];
     vertex->position[VAR_Y] = vertex->position[VAR_Y] / vertex->position[VAR_W];
     vertex->position[VAR_Z] = vertex->position[VAR_Z] / vertex->position[VAR_W];
@@ -360,7 +360,7 @@ static void homogeneous_division_color(struct vertex_output *vertex){
 /*
 * Fragment shader for surface color based on surface normals.
 */
-static void fragment_shader_color(int y, int x, struct fragment_input *input, struct uniform_variables *vars){
+static void fragment_shader_color(int y, int x, er_FragInput *input, er_UniVars *vars){
     if(input->frag_coord[VAR_Z] >= read_depth(y, x)){
         return;
     }
@@ -389,7 +389,7 @@ static void fragment_shader_color(int y, int x, struct fragment_input *input, st
 /*
 * Vertex shader for axis and arrows.
 */
-static void vertex_shader_axis(struct vertex_input *input, struct vertex_output *output, struct uniform_variables *vars){
+static void vertex_shader_axis(er_VertexInput *input, er_VertexOutput *output, er_UniVars *vars){
     multd_mat4_vec4(vars->modelview_projection, input->position, output->position);
     output->attributes[0] = input->color[VAR_R];
     output->attributes[1] = input->color[VAR_G];
@@ -400,7 +400,7 @@ static void vertex_shader_axis(struct vertex_input *input, struct vertex_output 
 /*
 * Homogeneous division for axis and arrows.
 */
-static void homogeneous_division_axis(struct vertex_output *vertex){
+static void homogeneous_division_axis(er_VertexOutput *vertex){
     vertex->position[VAR_X] = vertex->position[VAR_X] / vertex->position[VAR_W];
     vertex->position[VAR_Y] = vertex->position[VAR_Y] / vertex->position[VAR_W];
     vertex->position[VAR_Z] = vertex->position[VAR_Z] / vertex->position[VAR_W];
@@ -410,7 +410,7 @@ static void homogeneous_division_axis(struct vertex_output *vertex){
 /*
 * Fragment shader for axis and arrows.
 */
-static void fragment_shader_axis(int y, int x, struct fragment_input *input, struct uniform_variables *vars){
+static void fragment_shader_axis(int y, int x, er_FragInput *input, er_UniVars *vars){
     if(input->frag_coord[VAR_Z] >= read_depth(y, x)){
         return;
     }
@@ -421,7 +421,7 @@ static void fragment_shader_axis(int y, int x, struct fragment_input *input, str
 /*
 * Vertex shader for surface lighting
 */
-static void vertex_shader_light(struct vertex_input *input, struct vertex_output *output, struct uniform_variables *vars){
+static void vertex_shader_light(er_VertexInput *input, er_VertexOutput *output, er_UniVars *vars){
     vec3 eye_normal;
     multd_mat4_vec4(vars->modelview_projection, input->position, output->position);
     multd_mat3_vec3(vars->normal, input->normal, eye_normal);
@@ -436,7 +436,7 @@ static void vertex_shader_light(struct vertex_input *input, struct vertex_output
 /*
 * Homogeneous division for surface lighting.
 */
-static void homogeneous_division_light(struct vertex_output *vertex){
+static void homogeneous_division_light(er_VertexOutput *vertex){
     vertex->position[VAR_X] = vertex->position[VAR_X] / vertex->position[VAR_W];
     vertex->position[VAR_Y] = vertex->position[VAR_Y] / vertex->position[VAR_W];
     vertex->position[VAR_Z] = vertex->position[VAR_Z] / vertex->position[VAR_W];
@@ -452,7 +452,7 @@ static void homogeneous_division_light(struct vertex_output *vertex){
 /*
 * Fragment shader for surface lighting. One directional light source, phong shading.
 */
-static void fragment_shader_light(int y, int x, struct fragment_input *input, struct uniform_variables *vars){
+static void fragment_shader_light(int y, int x, er_FragInput *input, er_UniVars *vars){
 
     if(input->frag_coord[VAR_Z] >= read_depth(y, x)){
         return;
@@ -557,8 +557,8 @@ static void setup(){
         quit();
     }
     /* Init EduRaster */
-    if(er_init() != 0) {
-        fprintf(stderr, "Unable to init eduraster: %s\n", er_get_error_string(er_get_error()));
+    if(er_init() != ER_NO_ERROR) {
+        fprintf(stderr, "Unable to init eduraster\n");
         quit();
     }
     er_viewport(0, 0, window_width, window_height);
@@ -600,7 +600,7 @@ static void setup(){
     /* Create vertex array for surface */
     va = er_create_vertex_array();
     if(va == NULL){
-        fprintf(stderr, "Unable to create vertex array: %s\n", er_get_error_string(er_get_error()));
+        fprintf(stderr, "Unable to create vertex array\n");
         quit();
     }
     er_use_vertex_array(va);
@@ -611,7 +611,7 @@ static void setup(){
     /* Create program for surface lighting */
     program_surface_light = er_create_program();
     if(program_surface_light == NULL){
-        fprintf(stderr, "Unable to create eduraster program: %s\n", er_get_error_string(er_get_error()));
+        fprintf(stderr, "Unable to create eduraster program\n");
         quit();
     }
     er_use_program(program_surface_light);
@@ -625,7 +625,7 @@ static void setup(){
     /* Create program for axis */
     program_axis = er_create_program();
     if(program_axis == NULL){
-        fprintf(stderr, "Unable to create eduraster program: %s\n", er_get_error_string(er_get_error()));
+        fprintf(stderr, "Unable to create eduraster program\n");
         quit();
     }
     er_use_program(program_axis);
@@ -636,7 +636,7 @@ static void setup(){
     /* Create program for surface color */
     program_surface_color = er_create_program();
     if(program_surface_color == NULL){
-        fprintf(stderr, "Unable to create eduraster program: %s\n", er_get_error_string(er_get_error()));
+        fprintf(stderr, "Unable to create eduraster program\n");
         quit();
     }
     er_use_program(program_surface_color);

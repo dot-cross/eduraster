@@ -1,115 +1,109 @@
 #include "pipeline.h"
 
-struct program *current_program;
+er_Program *current_program;
 
-struct program *er_create_program(){
+er_Program* er_create_program(){
   
-    struct program *new_program = (struct program*)malloc(sizeof(struct program));
-    new_program->varying_attributes = 0;
-    new_program->vertex_shader = NULL;
-    new_program->fragment_shader = NULL;
-    new_program->homogeneous_division = NULL;
+    er_Program *new_program = (er_Program*)malloc(sizeof(er_Program));
+    if(new_program != NULL) {
+        new_program->varying_attributes = 0;
+        new_program->vertex_shader = NULL;
+        new_program->fragment_shader = NULL;
+        new_program->homogeneous_division = NULL;
+    }
     return new_program;
 }
 
-void er_delete_program(struct program *p){
+er_StatusEnum er_delete_program(er_Program *p){
 
     if(p == NULL){
-        set_error(ER_NULL_POINTER);
-        return;
+        return ER_NULL_POINTER;
     }
     free(p);
-
+    return ER_NO_ERROR;
 }
 
-void er_use_program(struct program *p){
+er_StatusEnum er_use_program(er_Program *p){
 
     if(p == NULL){
-        set_error(ER_NULL_POINTER);
-        return;
+        return ER_NULL_POINTER;
     }
     current_program = p;
-
+    return ER_NO_ERROR;
 }
 
-void er_uniformi(struct program *p, int index, int value){
+er_StatusEnum er_uniformi(er_Program *p, unsigned int index, int value){
     if(p == NULL){
-        set_error(ER_NULL_POINTER);
-        return;
+        return ER_NULL_POINTER;
     }
     p->uniform_integer[index] = value;
+    return ER_NO_ERROR;
 }
 
-void er_uniformf(struct program *p, int index, float value){
+er_StatusEnum er_uniformf(er_Program *p, unsigned int index, float value){
     if(p == NULL){
-        set_error(ER_NULL_POINTER);
-        return;
+        return ER_NULL_POINTER;
     }
     p->uniform_float[index] = value;
+    return ER_NO_ERROR;
 }
 
-void er_uniform_ptr(struct program *p, int index, void* pointer){
+er_StatusEnum er_uniform_ptr(er_Program *p, unsigned int index, void* pointer){
     if(p == NULL){
-        set_error(ER_NULL_POINTER);
-        return;
+        return ER_NULL_POINTER;
     }
     p->uniform_ptr[index] = pointer;
+    return ER_NO_ERROR;
 }
 
-void er_uniform_texture_ptr(struct program *p, int index, struct texture* tex_ptr){
+er_StatusEnum er_uniform_texture_ptr(er_Program *p, unsigned int index, er_Texture* tex_ptr){
     if(p == NULL){
-        set_error(ER_NULL_POINTER);
-        return;
+        return ER_NULL_POINTER;
     }
     if(tex_ptr == NULL){
-        set_error(ER_NULL_POINTER);
-        return;
+        return ER_NULL_POINTER;
     }
     p->uniform_texture[index] = tex_ptr;
+    return ER_NO_ERROR;
 }
 
-void er_varying_attributes(struct program *p, int number){
+er_StatusEnum er_varying_attributes(er_Program *p, int number){
     if(p == NULL){
-        set_error(ER_NULL_POINTER);
-        return;
+        return ER_NULL_POINTER;
     }
     p->varying_attributes = number;
+    return ER_NO_ERROR;
 }
 
-void er_load_fragment_shader(struct program *p, void (*fragment_shader)(int, int, struct fragment_input*, struct uniform_variables*)){
+er_StatusEnum er_load_fragment_shader(er_Program *p, void (*fragment_shader)(int, int, er_FragInput*, er_UniVars*)){
 
     if(p == NULL){
-        set_error(ER_NULL_POINTER);
-        return;
+        return ER_NULL_POINTER;
     }
     if(fragment_shader == NULL){
-        set_error(ER_NULL_POINTER);
-        return;
+        return ER_NULL_POINTER;
     }
     p->fragment_shader = fragment_shader;
-
+    return ER_NO_ERROR;
 }
 
-void er_load_vertex_shader(struct program *p, void (*vertex_shader)(struct vertex_input*, struct vertex_output*, struct uniform_variables*) ){
+er_StatusEnum er_load_vertex_shader(er_Program *p, void (*vertex_shader)(er_VertexInput*, er_VertexOutput*, er_UniVars*) ){
 
     if(p == NULL){
-        set_error(ER_NULL_POINTER);
-        return;
+        return ER_NULL_POINTER;
     }
     if(vertex_shader == NULL){
-        set_error(ER_NULL_POINTER);
-        return;
+        return ER_NULL_POINTER;
     }
     p->vertex_shader = vertex_shader;
-
+    return ER_NO_ERROR;
 }
 
-void er_load_homogeneous_division(struct program *p, void (*homogeneous_division)(struct vertex_output*) ){
+er_StatusEnum er_load_homogeneous_division(er_Program *p, void (*homogeneous_division)(er_VertexOutput*) ){
 
     if(p == NULL){
-        set_error(ER_NULL_POINTER);
-        return;
+        return ER_NULL_POINTER;
     }
     p->homogeneous_division = homogeneous_division;
-
+    return ER_NO_ERROR;
 }

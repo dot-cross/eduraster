@@ -1,49 +1,48 @@
 #include "pipeline.h"
 
-struct vertex_array *current_vertex_array;
+er_VertexArray *current_vertex_array;
 
-struct vertex_array* er_create_vertex_array(){
+er_VertexArray* er_create_vertex_array(){
 
-    struct vertex_array *new_vertex_array = (struct vertex_array*)malloc(sizeof(struct vertex_array));
-    new_vertex_array->vertex.enabled = ER_TRUE;
-    new_vertex_array->vertex.pointer = NULL;
-    new_vertex_array->normal.enabled = ER_FALSE;
-    new_vertex_array->normal.pointer = NULL;
-    new_vertex_array->color.enabled = ER_FALSE;
-    new_vertex_array->color.pointer = NULL;
-    new_vertex_array->tex_coord.enabled = ER_FALSE;
-    new_vertex_array->tex_coord.pointer = NULL;
-    new_vertex_array->fog_coord.enabled = ER_FALSE;
-    new_vertex_array->fog_coord.pointer = NULL;
+    er_VertexArray *new_vertex_array = (struct er_VertexArray*)malloc(sizeof(struct er_VertexArray));
+    if(new_vertex_array != NULL) {
+        new_vertex_array->vertex.enabled = ER_TRUE;
+        new_vertex_array->vertex.pointer = NULL;
+        new_vertex_array->normal.enabled = ER_FALSE;
+        new_vertex_array->normal.pointer = NULL;
+        new_vertex_array->color.enabled = ER_FALSE;
+        new_vertex_array->color.pointer = NULL;
+        new_vertex_array->tex_coord.enabled = ER_FALSE;
+        new_vertex_array->tex_coord.pointer = NULL;
+        new_vertex_array->fog_coord.enabled = ER_FALSE;
+        new_vertex_array->fog_coord.pointer = NULL;
+    }
     return new_vertex_array;
 
 }
 
-void er_delete_vertex_array(struct vertex_array *va){
+er_StatusEnum er_delete_vertex_array(er_VertexArray *va){
 
     if(va == NULL){
-        set_error(ER_NULL_POINTER);
-        return;
+        return ER_NULL_POINTER;
     }
     free(va);
-
+    return ER_NO_ERROR;
 }
 
-void er_use_vertex_array(struct vertex_array *va){
+er_StatusEnum er_use_vertex_array(er_VertexArray *va){
 
     if(va == NULL){
-        set_error(ER_NULL_POINTER);
-        return;
+        return ER_NULL_POINTER;
     }
     current_vertex_array = va;
-
+    return ER_NO_ERROR;
 }
 
-void er_enable_attribute_array(struct vertex_array *va, int array_enum, int enable){
+er_StatusEnum er_enable_attribute_array(er_VertexArray *va, er_VertexArrayEnum array_enum, er_Bool enable){
 
     if(va == NULL){
-        set_error(ER_NULL_POINTER);
-        return;
+        return ER_NULL_POINTER;
     }
     if(array_enum == ER_VERTEX_ARRAY){
         va->vertex.enabled = enable;
@@ -56,102 +55,89 @@ void er_enable_attribute_array(struct vertex_array *va, int array_enum, int enab
     }else if(array_enum == ER_TEX_COORD_ARRAY){
         va->tex_coord.enabled = enable;
     }else{
-        set_error(ER_INVALID_ENUM);
+        return ER_INVALID_ARGUMENT;
     }
-
+    return ER_NO_ERROR;
 }
 
-void er_vertex_pointer(struct vertex_array *va, unsigned int stride, unsigned int components, float *pointer){
+er_StatusEnum er_vertex_pointer(er_VertexArray *va, unsigned int stride, unsigned int components, float *pointer){
 
     if(va == NULL){
-        set_error(ER_NULL_POINTER);
-        return;
+        return ER_NULL_POINTER;
     }
     if(components != 2 && components != 3 && components != 4){
-        set_error(ER_OUT_OF_RANGE);
-        return;
+        return ER_INVALID_ARGUMENT;
     }
     if(pointer == NULL){
-        set_error(ER_NULL_POINTER);
-        return;
+        return ER_NULL_POINTER;
     }
     va->vertex.pointer = pointer;
     va->vertex.stride = stride;
     va->vertex.components = components;
-
+    return ER_NO_ERROR;
 }
 
-void er_color_pointer(struct vertex_array *va, unsigned int stride, unsigned int components, float *pointer){
+er_StatusEnum er_color_pointer(er_VertexArray *va, unsigned int stride, unsigned int components, float *pointer){
 
     if(va == NULL){
-        set_error(ER_NULL_POINTER);
-        return;
+        return ER_NULL_POINTER;
     }
     if(components != 3 && components != 4){
-        set_error(ER_OUT_OF_RANGE);
-        return;
+        return ER_INVALID_ARGUMENT;
     }
     if(pointer == NULL){
-        set_error(ER_NULL_POINTER);
-        return;
+        return ER_NULL_POINTER;
     }
     va->color.pointer = pointer;
     va->color.stride = stride;
     va->color.components = components;
-  
+    return ER_NO_ERROR;
 }
 
-void er_normal_pointer(struct vertex_array* va, unsigned int stride, float* pointer){
+er_StatusEnum er_normal_pointer(er_VertexArray* va, unsigned int stride, float* pointer){
 
     if(va == NULL){
-        set_error(ER_NULL_POINTER);
-        return;
+        return ER_NULL_POINTER;
     }
     if(pointer == NULL){
-        set_error(ER_NULL_POINTER);
-        return;
+        return ER_NULL_POINTER;
     }
     va->normal.pointer = pointer;
     va->normal.stride = stride;
-  
+    return ER_NO_ERROR;
 }
 
-void er_fog_coord_pointer(struct vertex_array *va, unsigned int stride, float *pointer){
+er_StatusEnum er_fog_coord_pointer(er_VertexArray *va, unsigned int stride, float *pointer){
 
     if(va == NULL){
-        set_error(ER_NULL_POINTER);
-        return;
+        return ER_NULL_POINTER;
     }
     if(pointer == NULL){
-        set_error(ER_NULL_POINTER);
-        return;
+        return ER_NULL_POINTER;
     }
     va->fog_coord.pointer = pointer;
     va->fog_coord.stride = stride;
-  
+    return ER_NO_ERROR;
 }
 
-void er_tex_coord_pointer(struct vertex_array *va, unsigned int stride, unsigned int components, float *pointer){
+er_StatusEnum er_tex_coord_pointer(er_VertexArray *va, unsigned int stride, unsigned int components, float *pointer){
 
     if(va == NULL){
-        set_error(ER_NULL_POINTER);
-        return;
+        return ER_NULL_POINTER;
     }
     if(components == 0 || components > 4){
-        set_error(ER_OUT_OF_RANGE);
-        return;
+        return ER_INVALID_ARGUMENT;
     }
     if(pointer == NULL){
-        set_error(ER_NULL_POINTER);
-        return;
+        return ER_NULL_POINTER;
     }
     va->tex_coord.pointer = pointer;
     va->tex_coord.stride = stride;
     va->tex_coord.components = components;
-  
+    return ER_NO_ERROR;
 }
 
-void vertex_assembly(struct vertex_array *vertex_array, struct vertex_input *vertex, unsigned int vertex_index){
+void vertex_assembly(er_VertexArray *vertex_array, er_VertexInput *vertex, unsigned int vertex_index){
 
     float *vertex_data;
     float *normal_data;

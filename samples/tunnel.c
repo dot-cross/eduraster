@@ -8,9 +8,9 @@
 /* Window dimensions */
 static unsigned int window_width = 640, window_height = 480;
 /* Texture */
-static struct texture *tex = NULL;
+static er_Texture *tex = NULL;
 /* Program */
-static struct program *prog = NULL;
+static er_Program *prog = NULL;
 /* Time */
 static float var_time = 0.0f;
 /* Buffers */
@@ -94,7 +94,7 @@ static void display (void) {
 /*
 * Vertex shader for tunnel effect.
 */
-static void pdef_vs(struct vertex_input *input, struct vertex_output *output, struct uniform_variables *vars){
+static void tunnel_vs(er_VertexInput *input, er_VertexOutput*output, er_UniVars *vars){
     output->position[VAR_X] = input->position[VAR_X];
     output->position[VAR_Y] = input->position[VAR_Y];
     output->position[VAR_Z] = input->position[VAR_Z];
@@ -104,10 +104,10 @@ static void pdef_vs(struct vertex_input *input, struct vertex_output *output, st
 /*
 * Fragment shader for tunnel effect.
 */
-static void pdef_fs(int y, int x, struct fragment_input *input, struct uniform_variables *vars){
+static void tunnel_fs(int y, int x, er_FragInput *input, er_UniVars *vars){
 
     float my, mx, time;
-    struct texture *tex = vars->uniform_texture[0];
+    er_Texture *tex = vars->uniform_texture[0];
     time = vars->uniform_float[0];
     my = -1.0f + 2.0f * (input->frag_coord[VAR_Y] + 0.5)/ vars->height;
     mx = -1.0f + 2.0f * (input->frag_coord[VAR_X] + 0.5)/ vars->width;
@@ -124,7 +124,7 @@ static void pdef_fs(int y, int x, struct fragment_input *input, struct uniform_v
     coord[VAR_T] = 0.5f / radius + 0.0005f*time;
 
     vec4 tex_color;
-    texture_lod(tex, coord, 0.0f, tex_color);
+    er_texture_lod(tex, coord, 0.0f, tex_color);
     //Intensity
     float in = 1.6f /radius;
     tex_color[VAR_R] = clamp(tex_color[VAR_R] * in, 0.0f, 1.0f);
@@ -137,10 +137,10 @@ static void pdef_fs(int y, int x, struct fragment_input *input, struct uniform_v
 /*
  * Fragment shader for tunnel effect. Analytical calculation of derivatives for trilinear filtering.
  */
-static void pdef_grad_fs(int y, int x, struct fragment_input *input, struct uniform_variables *vars){
+static void tunnel_grad_fs(int y, int x, er_FragInput *input, er_UniVars *vars){
 
     float my, mx, time;
-    struct texture *tex = vars->uniform_texture[0];
+    er_Texture *tex = vars->uniform_texture[0];
     time = vars->uniform_float[0];
     my = -1.0f + 2.0f * (input->frag_coord[VAR_Y] + 0.5)/ vars->height;
     mx = -1.0f + 2.0f * (input->frag_coord[VAR_X] + 0.5)/ vars->width;
@@ -170,7 +170,7 @@ static void pdef_grad_fs(int y, int x, struct fragment_input *input, struct unif
     ddy[VAR_T] = -0.5*my*one_over_radio_pow_3*dmy_dy;
 
     vec4 tex_color;
-    texture_grad(tex, coord, ddx, ddy, tex_color);
+    er_texture_grad(tex, coord, ddx, ddy, tex_color);
     float in = 1.6f /radius;
     tex_color[VAR_R] = clamp(tex_color[VAR_R] * in, 0.0f, 1.0f);
     tex_color[VAR_G] = clamp(tex_color[VAR_G] * in, 0.0f, 1.0f);
@@ -190,8 +190,8 @@ static void setup(){
         quit();
     }
     /* Init EduRaster */
-    if(er_init() != 0) {
-        fprintf(stderr, "Unable to init eduraster: %s\n", er_get_error_string(er_get_error()));
+    if(er_init() != ER_NO_ERROR) {
+        fprintf(stderr, "Unable to init eduraster\n");
         quit();
     }
     er_viewport(0, 0, window_width, window_height);
@@ -208,9 +208,9 @@ static void setup(){
     }
 
     SDL_PixelFormat *format = image->format;
-    tex = er_create_texture2D(image->w, image->h, ER_RGB32F);
-    if(tex == NULL){
-        fprintf(stderr, "Unable to create texture. Error: %s\n", er_get_error_string(er_get_error()));
+    er_StatusEnum status = er_create_texture2D(&tex, image->w, image->h, ER_RGB32F);
+    if(status != ER_NO_ERROR || tex == NULL){
+        fprintf(stderr, "Unable to create texture: %s\n", er_status_string(status));
         quit();
     }
     er_texture_filtering(tex, ER_MAGNIFICATION_FILTER, ER_NEAREST);
@@ -220,7 +220,12 @@ static void setup(){
     
     SDL_LockSurface(image);
     unsigned char *src_data = image->pixels;
-    float *dst_data = er_texture_ptr(tex, ER_TEXTURE_2D, 0);
+    float *dst_data = NULL;
+    status = er_texture_ptr(tex, ER_TEXTURE_2D, 0, &dst_data);
+    if(status != ER_NO_ERROR || dst_data == NULL){
+        fprintf(stderr, "Unable to retrieve pointer to texture pixels: %s\n", er_status_string(status));
+        quit();
+    }
     int i, j;
     unsigned int src_color = 0;
     unsigned char r, g, b;
@@ -236,24 +241,34 @@ static void setup(){
     SDL_UnlockSurface(image);
     SDL_FreeSurface(image);
     /* Generate mipmaps */
-    er_generate_mipmaps(tex);
-    int error = er_get_error();
-    if(error != ER_NO_ERROR){
-        fprintf(stderr, "%s\n",er_get_error_string(error));
+    if(er_generate_mipmaps(tex) != ER_NO_ERROR){
+        fprintf(stderr, "Cound't generate mipmaps\n");
         quit();
     }
     /* Create program for plane deformation */
     prog = er_create_program();
     if(prog == NULL){
-        fprintf(stderr, "Unable to create eduraster program: %s\n", er_get_error_string(er_get_error()));
+        fprintf(stderr, "Unable to create eduraster program\n");
         quit();
     }
     er_use_program(prog);
     er_varying_attributes(prog, 0);
-    er_load_vertex_shader(prog, pdef_vs);
+    er_load_vertex_shader(prog, tunnel_vs);
     er_load_homogeneous_division(prog, NULL);
-    er_load_fragment_shader(prog, pdef_fs);
+    er_load_fragment_shader(prog, tunnel_fs);
     er_uniform_texture_ptr(prog, 0, tex);
+}
+
+/*
+* Show help
+*/
+static void show_help(){
+    printf("\nHelp:\n");
+    printf("Press t: Trilinear filtering\n");
+    printf("Press n: Nearest neighbout\n");
+    printf("Press h: Show this help\n");
+    printf("Press Esc: Quit the program\n");
+    printf("\n");
 }
 
 /*
@@ -262,8 +277,23 @@ static void setup(){
 static void process_event (SDL_Event *event){
     if(event->type == SDL_KEYDOWN){
         int key = event->key.keysym.sym;
-        if(key == SDLK_ESCAPE){
-            quit();
+        switch(key) {
+            case SDLK_t:
+                er_texture_filtering(tex, ER_MAGNIFICATION_FILTER, ER_LINEAR);
+                er_texture_filtering(tex, ER_MINIFICATION_FILTER, ER_LINEAR_MIPMAP_LINEAR);
+                er_load_fragment_shader(prog, tunnel_grad_fs);
+                break;
+            case SDLK_n:
+                er_texture_filtering(tex, ER_MAGNIFICATION_FILTER, ER_NEAREST);
+                er_texture_filtering(tex, ER_MINIFICATION_FILTER, ER_NEAREST);
+                er_load_fragment_shader(prog, tunnel_fs);
+                break;
+            case SDLK_h:
+                show_help();
+                break;
+            case SDLK_ESCAPE:
+                quit();
+                break;
         }
     }else if(event->type == SDL_QUIT){
         quit();
@@ -276,7 +306,7 @@ int main(int argc, char *argv[]){
         fprintf(stderr, "Unable to initialize SDL, %s\n", SDL_GetError());
         quit();
     }
-    window = SDL_CreateWindow("Plane deformations", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, window_width, window_height, 0);
+    window = SDL_CreateWindow("Tunnel Effect", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, window_width, window_height, 0);
     if(window == NULL){
         fprintf(stderr, "Unable to create window: %s\n", SDL_GetError());
         quit();
@@ -293,6 +323,8 @@ int main(int argc, char *argv[]){
     }
     /* Program Initialization */
     setup();
+    /* Show Help */
+    show_help();
     /* Main Loop */
     SDL_Event e;
     for(;;){

@@ -8,9 +8,9 @@
 /* Window dimensions */
 static unsigned int window_width = 640, window_height = 480;
 /* Texture */
-static struct texture *tex = NULL;
+static struct er_Texture *tex = NULL;
 /* Program */
-static struct program *prog = NULL;
+static struct er_Program *prog = NULL;
 /* Buffers */
 static unsigned int *color_buffer = NULL;
 static float *depth_buffer = NULL;
@@ -239,7 +239,7 @@ static void display (void) {
 /*
 * Vertex shader for texture mapped cube.
 */
-static void vs_cube(struct vertex_input *input, struct vertex_output *output, struct uniform_variables *vars){
+static void vs_cube(struct er_VertexInput *input, struct er_VertexOutput *output, struct er_UniVars *vars){
     vec4 eye_position;
     multd_mat4_vec4(vars->modelview, input->position, eye_position);
     multd_mat4_vec4(vars->projection, eye_position, output->position);
@@ -250,7 +250,7 @@ static void vs_cube(struct vertex_input *input, struct vertex_output *output, st
 /*
 * Homogeneous division for texture mapped cube.
 */
-static void hd_cube(struct vertex_output *vertex){
+static void hd_cube(struct er_VertexOutput *vertex){
     vertex->position[VAR_X] = vertex->position[VAR_X] / vertex->position[VAR_W];
     vertex->position[VAR_Y] = vertex->position[VAR_Y] / vertex->position[VAR_W];
     vertex->position[VAR_Z] = vertex->position[VAR_Z] / vertex->position[VAR_W];
@@ -262,17 +262,17 @@ static void hd_cube(struct vertex_output *vertex){
 /*
 * Fragment shader for texture mapped cube.
 */
-static void fs_cube(int y, int x, struct fragment_input *input, struct uniform_variables *vars){
+static void fs_cube(int y, int x, struct er_FragInput *input, struct er_UniVars *vars){
 
     if(input->frag_coord[VAR_Z] >= read_depth(y, x)){
         return;
     }
-    struct texture* tex = vars->uniform_texture[0];
+    struct er_Texture* tex = vars->uniform_texture[0];
     vec2 tex_coord;
     vec4 tex_color;
     tex_coord[VAR_S] = input->attributes[0] / input->frag_coord[VAR_W];
     tex_coord[VAR_T] = input->attributes[1] / input->frag_coord[VAR_W];
-    texture_lod(tex, tex_coord, 0.0f, tex_color);
+    er_texture_lod(tex, tex_coord, 0.0f, tex_color);
 
     write_color(y, x, tex_color[0], tex_color[1], tex_color[2], 1.0f);
     write_depth(y, x, input->frag_coord[VAR_Z]);
@@ -281,13 +281,13 @@ static void fs_cube(int y, int x, struct fragment_input *input, struct uniform_v
 /*
 * Fragment shader for texture mapped cube. Calculation of perspective correct derivatives for trilinear filtering.
 */
-static void fs_cube_grad(int y, int x, struct fragment_input *input, struct uniform_variables *vars){
+static void fs_cube_grad(int y, int x, struct er_FragInput *input, struct er_UniVars *vars){
     
     if(input->frag_coord[VAR_Z] >= read_depth(y, x)){
         return;
     }
 
-    struct texture *tex = vars->uniform_texture[0];
+    struct er_Texture *tex = vars->uniform_texture[0];
     vec2 tex_coord;
     vec4 tex_color;
     tex_coord[VAR_S] = input->attributes[0] / input->frag_coord[VAR_W];
@@ -299,7 +299,7 @@ static void fs_cube_grad(int y, int x, struct fragment_input *input, struct unif
     ddx[VAR_T] = (input->ddx[1] * input->frag_coord[VAR_W] - input->attributes[1] * input->dw_dx) * one_over_w2;
     ddy[VAR_S] = (input->ddy[0] * input->frag_coord[VAR_W] - input->attributes[0] * input->dw_dy) * one_over_w2;
     ddy[VAR_T] = (input->ddy[1] * input->frag_coord[VAR_W] - input->attributes[1] * input->dw_dy) * one_over_w2;
-    texture_grad(tex, tex_coord, ddx, ddy, tex_color);
+    er_texture_grad(tex, tex_coord, ddx, ddy, tex_color);
 
     write_color(y, x, tex_color[0], tex_color[1], tex_color[2], 1.0f);
     write_depth(y, x, input->frag_coord[VAR_Z]);
@@ -323,7 +323,7 @@ static void setup(){
     }
     /* Init EduRaster */
     if(er_init() != 0) {
-        fprintf(stderr, "Unable to init eduraster: %s\n", er_get_error_string(er_get_error()));
+        fprintf(stderr, "Unable to init eduraster\n");
         quit();
     }
     er_viewport(0 , 0 , window_width, window_height);
@@ -339,10 +339,9 @@ static void setup(){
         fprintf(stderr, "Unable to load image %s. Error: %s\n", SDL_GetError());
         quit();
     }
-
-    tex = er_create_texture2D(image->w, image->h, ER_RGB32F);
-    if(tex == NULL){
-        fprintf(stderr, "Unable to create texture %s. Error: %s\n", er_get_error_string(er_get_error()));
+    er_StatusEnum status = er_create_texture2D(&tex, image->w, image->h, ER_RGB32F);
+    if(status != ER_NO_ERROR || tex == NULL){
+        fprintf(stderr, "Unable to create texture\n");
         quit();
     }
     er_texture_filtering(tex, ER_MAGNIFICATION_FILTER, ER_LINEAR);
@@ -353,7 +352,12 @@ static void setup(){
     SDL_PixelFormat *format = image->format;
     SDL_LockSurface(image);
     unsigned char *src_data = image->pixels;
-    float *dst_data = er_texture_ptr(tex, ER_TEXTURE_2D, 0);
+    float *dst_data = NULL;
+    status = er_texture_ptr(tex, ER_TEXTURE_2D, 0, &dst_data);
+    if(status != ER_NO_ERROR || dst_data == NULL){
+        fprintf(stderr, "Unable to retrieve pointer to texture pixels\n");
+        quit();
+    }
     int i, j;
     unsigned int src_color = 0;
     unsigned char r, g, b;
@@ -369,16 +373,14 @@ static void setup(){
     SDL_UnlockSurface(image);
     SDL_FreeSurface(image);
     /* Generate mipmaps */
-    er_generate_mipmaps(tex);
-    int error = er_get_error();
-    if(error != ER_NO_ERROR){
-        fprintf(stderr, "%s\n",er_get_error_string(error));
+    if(er_generate_mipmaps(tex) != ER_NO_ERROR){
+        fprintf(stderr, "Unable to generate mipmaps\n");
         quit();
     }
     /* Create program for texture */
     prog = er_create_program();
     if(prog == NULL){
-        fprintf(stderr, "Unable to create eduraster program: %s\n", er_get_error_string(er_get_error()));
+        fprintf(stderr, "Unable to create eduraster program\n");
         quit();
     }
     er_use_program(prog);

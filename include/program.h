@@ -1,17 +1,17 @@
 #ifndef __PROGRAM__
 #define __PROGRAM__
 
-struct program {
-    void (*fragment_shader)(int y, int x, struct fragment_input *input, struct uniform_variables *vars);
-    void (*vertex_shader)(struct vertex_input *input, struct vertex_output *output, struct uniform_variables *vars);
-    void (*homogeneous_division)(struct vertex_output *vertex);
+struct er_Program {
+    void (*fragment_shader)(int y, int x, struct er_FragInput *input, struct er_UniVars *vars);
+    void (*vertex_shader)(struct er_VertexInput *input, struct er_VertexOutput *output, struct er_UniVars *vars);
+    void (*homogeneous_division)(struct er_VertexOutput *vertex);
     int varying_attributes;
     int uniform_integer[32];
     float uniform_float[32];
     void* uniform_ptr[32];
-    struct texture* uniform_texture[32];
+    struct er_Texture* uniform_texture[32];
 };
 
-extern struct program* current_program;
+extern struct er_Program* current_program;
 
 #endif

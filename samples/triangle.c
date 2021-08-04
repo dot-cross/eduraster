@@ -13,7 +13,7 @@ static SDL_Window *window = NULL;
 static SDL_Renderer *renderer = NULL;
 static SDL_Texture *screen_texture = NULL;
 /* EduRaster program */
-static struct program *prog = NULL;
+static er_Program *prog = NULL;
 
 /*
 * Free resources and exit program
@@ -98,7 +98,7 @@ static void display (void) {
 /*
 * Vertex shader for triangle
 */
-static void vertex_shader(struct vertex_input* input, struct vertex_output* output, struct uniform_variables* vars){
+static void vertex_shader(er_VertexInput* input, er_VertexOutput* output, er_UniVars* vars){
     vec4 eye_position;
     multd_mat4_vec4(vars->modelview, input->position, eye_position);
     multd_mat4_vec4(vars->projection, eye_position, output->position);
@@ -108,7 +108,7 @@ static void vertex_shader(struct vertex_input* input, struct vertex_output* outp
 }
 
 /* Fragment shader for triangle */
-static void fragment_shader(int y, int x, struct fragment_input* input, struct uniform_variables* vars){
+static void fragment_shader(int y, int x, er_FragInput* input, er_UniVars* vars){
     write_color(y, x, input->attributes[0], input->attributes[1], input->attributes[2], 1.0f);
 }
 
@@ -153,8 +153,8 @@ int main(int argc, char *argv[]){
         quit();
     }
     /* EduRaster initialization */
-    if(er_init() != 0){
-        fprintf(stderr, "Unable to init eduraster: %s\n", er_get_error_string(er_get_error()));
+    if(er_init() != ER_NO_ERROR){
+        fprintf(stderr, "Unable to init eduraster\n");
         quit();
     }
     er_viewport(0, 0, window_width, window_height);
@@ -164,7 +164,7 @@ int main(int argc, char *argv[]){
     er_matrix_mode(ER_MODELVIEW);
     prog = er_create_program();
     if(prog == NULL){
-        fprintf(stderr, "Unable to create eduraster program: %s\n", er_get_error_string(er_get_error()));
+        fprintf(stderr, "Unable to create eduraster program\n");
         quit();
     }
     er_use_program(prog);

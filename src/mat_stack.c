@@ -1,38 +1,35 @@
 #include "pipeline.h"
 
-static int matrix_mode;
+static er_MatrixModeEnum matrix_mode;
 
 //Modelview Matrix Stack
-int mv_stack_counter;
+unsigned int mv_stack_counter;
 mat4 mv_stack[MODELVIEW_MATRIX_STACK_SIZE];
 mat4 inv_mv_stack[MODELVIEW_MATRIX_STACK_SIZE];
 mat3 nm_stack[MODELVIEW_MATRIX_STACK_SIZE];
-int mv_flag[MODELVIEW_MATRIX_STACK_SIZE];
+er_Bool mv_flag[MODELVIEW_MATRIX_STACK_SIZE];
 //Projection matrix stack
-int proj_stack_counter;
+unsigned int proj_stack_counter;
 mat4 proj_stack[PROJECTION_MATRIX_STACK_SIZE];
 mat4 inv_proj_stack[PROJECTION_MATRIX_STACK_SIZE];
-int proj_flag[PROJECTION_MATRIX_STACK_SIZE];
+er_Bool proj_flag[PROJECTION_MATRIX_STACK_SIZE];
 //Current Modelview Projection matrix
 mat4 mv_proj_matrix;
 
-void er_get_matrix(mat4 matrix){
+er_StatusEnum er_get_matrix(mat4 matrix){
 
     if(matrix == NULL){
-        set_error(ER_NULL_POINTER);
-        return;
+        return ER_NULL_POINTER;
     }
     if(matrix_mode == ER_MODELVIEW){
         assign_mat4(matrix, mv_stack[mv_stack_counter]);
     }else if(matrix_mode == ER_PROJECTION){
         assign_mat4(matrix, proj_stack[proj_stack_counter]);
-    }else{
-        set_error(ER_INVALID_OPERATION);
     }
-
+    return ER_NO_ERROR;
 }
 
-void er_push_matrix(){
+er_StatusEnum er_push_matrix(){
 
     if(matrix_mode == ER_MODELVIEW){
         if(mv_stack_counter < MODELVIEW_MATRIX_STACK_SIZE - 1){
@@ -40,7 +37,7 @@ void er_push_matrix(){
             mv_flag[mv_stack_counter+1] = ER_TRUE;
             mv_stack_counter++;
         }else{
-            set_error(ER_STACK_OVERFLOW);
+            return ER_STACK_OVERFLOW;        
         }
     }else if(matrix_mode == ER_PROJECTION){
         if(proj_stack_counter < PROJECTION_MATRIX_STACK_SIZE - 1){
@@ -48,34 +45,30 @@ void er_push_matrix(){
             proj_flag[proj_stack_counter+1] = ER_TRUE;
             proj_stack_counter++;
         }else{
-            set_error(ER_STACK_OVERFLOW);
+            return ER_STACK_OVERFLOW;
         }
-    }else{
-        set_error(ER_INVALID_OPERATION);
     }
-
+    return ER_NO_ERROR;
 }
 
-void er_pop_matrix(){
+er_StatusEnum er_pop_matrix(){
 
     if(matrix_mode == ER_MODELVIEW){
         if(mv_stack_counter > 0){
             mv_flag[mv_stack_counter] = ER_TRUE;
             mv_stack_counter--;
         }else{
-            set_error(ER_STACK_UNDERFLOW);
+            return ER_STACK_UNDERFLOW;
         }
     }else if(matrix_mode == ER_PROJECTION){
         if(proj_stack_counter > 0){
             proj_flag[proj_stack_counter] = ER_TRUE;
             proj_stack_counter--;
         }else{
-            set_error(ER_STACK_UNDERFLOW);
+            return ER_STACK_UNDERFLOW;
         }
-    }else{
-        set_error(ER_INVALID_OPERATION);
     }
-
+    return ER_NO_ERROR;
 }
 
 void er_load_identity(){
@@ -86,25 +79,23 @@ void er_load_identity(){
     }else if(matrix_mode == ER_PROJECTION){
         identity_mat4(proj_stack[proj_stack_counter]);
         proj_flag[proj_stack_counter] = ER_TRUE;
-    }else{
-        set_error(ER_INVALID_OPERATION);
     }
 
 }
 
-void er_matrix_mode(unsigned char mode){
+er_StatusEnum er_matrix_mode(er_MatrixModeEnum mode){
     if(mode == ER_MODELVIEW || mode == ER_PROJECTION){
         matrix_mode = mode;
     }else{
-        set_error(ER_INVALID_ENUM);
+        return ER_INVALID_ARGUMENT;
     }
+    return ER_NO_ERROR;
 }
 
-void er_multiply_matrix(mat4 matrix){
+er_StatusEnum er_multiply_matrix(mat4 matrix){
 
     if(matrix == NULL){
-        set_error(ER_NULL_POINTER);
-        return;
+        return ER_NULL_POINTER;
     }
     if(matrix_mode == ER_MODELVIEW){
         mult_mat4_mat4(mv_stack[mv_stack_counter], matrix, mv_stack[mv_stack_counter]);
@@ -112,17 +103,14 @@ void er_multiply_matrix(mat4 matrix){
     }else if(matrix_mode == ER_PROJECTION){
         mult_mat4_mat4(proj_stack[proj_stack_counter], matrix, proj_stack[proj_stack_counter]);
         proj_flag[proj_stack_counter] = ER_TRUE;
-    }else{
-        set_error(ER_INVALID_OPERATION);
     }
-
+    return ER_NO_ERROR;
 }
 
-void er_load_matrix_transpose(mat4 matrix){
+er_StatusEnum er_load_matrix_transpose(mat4 matrix){
 
     if(matrix == NULL){
-        set_error(ER_NULL_POINTER);
-        return;
+        return ER_NULL_POINTER;
     }
     if(matrix_mode == ER_MODELVIEW){
         assignT_mat4( mv_stack[mv_stack_counter], matrix);
@@ -130,17 +118,14 @@ void er_load_matrix_transpose(mat4 matrix){
     }else if(matrix_mode == ER_PROJECTION){
         assignT_mat4( proj_stack[proj_stack_counter] , matrix);
         proj_flag[proj_stack_counter] = ER_TRUE;
-    }else{
-        set_error(ER_INVALID_OPERATION);
     }
-
+    return ER_NO_ERROR;
 }
 
-void er_load_matrix(mat4 matrix){
+er_StatusEnum er_load_matrix(mat4 matrix){
 
     if(matrix == NULL){
-        set_error(ER_NULL_POINTER);
-        return;
+        return ER_NULL_POINTER;
     }
     if(matrix_mode == ER_MODELVIEW){
         assign_mat4(mv_stack[mv_stack_counter], matrix);
@@ -148,10 +133,8 @@ void er_load_matrix(mat4 matrix){
     }else if(matrix_mode == ER_PROJECTION){
         assign_mat4(proj_stack[proj_stack_counter] , matrix);
         proj_flag[proj_stack_counter] = ER_TRUE;
-    }else{
-        set_error(ER_INVALID_OPERATION);
     }
-
+    return ER_NO_ERROR;
 }
 
 void er_rotate(float angle, float x, float y, float z){

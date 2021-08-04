@@ -34,7 +34,7 @@ static float ndc_top[]    = { 0.0f,  1.0f,  0.0f, -1.0f};
 static float ndc_near[]   = { 0.0f,  0.0f,  1.0f, -1.0f};
 static float ndc_far[]    = { 0.0f,  0.0f, -1.0f, -1.0f};
 
-int calculate_outcode(struct vertex_output *vertex){
+int calculate_outcode(er_VertexOutput *vertex){
 
     int outcode = 0;
 
@@ -60,11 +60,11 @@ int calculate_outcode(struct vertex_output *vertex){
 
 }
 
-static unsigned int add_new_vertex(struct vertex_output *vertex0, struct vertex_output *vertex1, float t){
+static unsigned int add_new_vertex(er_VertexOutput *vertex0, er_VertexOutput *vertex1, float t){
 
     unsigned int new_index = output_buffer_size++;
     output_buffer[new_index].processed = ER_FALSE;
-    struct vertex_output *new_vertex = &(output_buffer[new_index].vertex);
+    er_VertexOutput *new_vertex = &(output_buffer[new_index].vertex);
 
     new_vertex->position[VAR_X] = vertex0->position[VAR_X] + t * ( vertex1->position[VAR_X] - vertex0->position[VAR_X] );
     new_vertex->position[VAR_Y] = vertex0->position[VAR_Y] + t * ( vertex1->position[VAR_Y] - vertex0->position[VAR_Y] );
@@ -138,8 +138,8 @@ int clip_line(unsigned int vertex0_index, unsigned int vertex1_index){
         return PRIMITIVE_NO_VISIBLE;
     }
 
-    struct vertex_output* vertex0 = &(output_buffer[vertex0_index].vertex);
-    struct vertex_output* vertex1 = &(output_buffer[vertex1_index].vertex);
+    er_VertexOutput* vertex0 = &(output_buffer[vertex0_index].vertex);
+    er_VertexOutput* vertex1 = &(output_buffer[vertex1_index].vertex);
 
     float delta_x, delta_y, delta_z, delta_w;
     delta_x = vertex1->position[VAR_X] - vertex0->position[VAR_X];
@@ -188,8 +188,8 @@ static void clip_polygon(float *plane, unsigned int *input, unsigned int *output
 
     unsigned int i, polygon_size;
     float distance0, distance1, t;
-    struct vertex_output *vertex0;
-    struct vertex_output *vertex1;
+    er_VertexOutput *vertex0;
+    er_VertexOutput *vertex1;
 
     polygon_size = 0;
     vertex0 = &(output_buffer[ input[input_size - 1] ].vertex);

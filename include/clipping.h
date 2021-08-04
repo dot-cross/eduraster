@@ -6,7 +6,7 @@
 #define PRIMITIVE_VISIBLE 0x1
 #define PRIMITIVE_NO_VISIBLE 0x0
 
-int calculate_outcode(struct vertex_output *vertex);
+int calculate_outcode(struct er_VertexOutput *vertex);
 
 int clip_point(unsigned int input_index);
 
