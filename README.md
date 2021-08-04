@@ -27,9 +27,11 @@ Eduraster is a personal project that I did for self-teaching purposes, and was t
   * Texture sampling on vertex and fragment stages.
   * Render to texture.
 
+
 ### Samples
 
-SDL 2.0.4 is needed to compile and run the samples. (https://www.libsdl.org/download-2.0.php).
+SDL 2.0.14 is used to create a window, display buffer of pixels, handle keyboard and mouse events, and load images from disk. (https://www.libsdl.org/download-2.0.php)
+A simple script (build.bat) is provided to compile with gcc using MinGW (http://mingw-w64.org/doku.php) on Windows.
 
 #### Single Triangle
 
